@@ -1,10 +1,5 @@
-import React from 'react';
-import { Upload, Typography } from 'antd';
+import React, { useState, useRef } from 'react';
 import { CloudUploadOutlined } from '@ant-design/icons';
-import type { UploadProps } from 'antd';
-
-const { Dragger } = Upload;
-const { Text } = Typography;
 
 interface DragUploadProps {
   onFileSelect: (file: File) => void;
@@ -12,38 +7,48 @@ interface DragUploadProps {
 }
 
 export const DragUpload: React.FC<DragUploadProps> = ({ onFileSelect, disabled }) => {
-  const props: UploadProps = {
-    name: 'file',
-    multiple: false,
-    accept: 'audio/*',
-    disabled,
-    showUploadList: false, // 我们自己控制 UI，不显示默认列表
-    beforeUpload: (file) => {
-      onFileSelect(file as File);
-      return false; // 拦截默认的自动上传行为
-    },
+  const [over, setOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setOver(false);
+    if (disabled) return;
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('audio/')) onFileSelect(file);
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onFileSelect(file);
+  };
+
+  const cls = `drag-zone${over ? ' drag-over' : ''}${disabled ? ' disabled' : ''}`;
+
   return (
-    <div className="glass-card" style={{ padding: '4px', borderRadius: '16px' }}>
-      <Dragger
-        {...props}
-        style={{
-          background: 'transparent',
-          border: '2px dashed var(--color-primary-cyan)',
-          borderRadius: '12px'
-        }}
-      >
-        <p className="ant-upload-drag-icon">
-          <CloudUploadOutlined style={{ color: 'var(--color-primary-cyan)' }} />
-        </p>
-        <p className="ant-upload-text" style={{ color: 'var(--color-primary-dark)' }}>
-          点击或将音频文件拖拽到这里上传
-        </p>
-        <p className="ant-upload-hint" style={{ color: '#888' }}>
-          支持 MP3, WAV, M4A 格式，单次最大支持 50MB
-        </p>
-      </Dragger>
+    <div
+      className={cls}
+      onDragOver={e => { e.preventDefault(); if (!disabled) setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={handleDrop}
+      onClick={() => !disabled && inputRef.current?.click()}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="audio/*"
+        style={{ display: 'none' }}
+        onChange={handleChange}
+      />
+      <div className="drag-zone-icon">
+        <CloudUploadOutlined />
+      </div>
+      <div className="drag-zone-title">
+        {over ? '释放以上传' : '拖拽音频文件到这里'}
+      </div>
+      <div className="drag-zone-hint">
+        支持 WAV · MP3 · FLAC · M4A · OGG
+      </div>
     </div>
   );
 };
