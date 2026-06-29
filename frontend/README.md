@@ -1,32 +1,44 @@
-# React + TypeScript + Vite
+# whisper 前端项目
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## 目录结构
+```
+src/
+├── components/       # 全局公共组件
+│   ├── WaveCircle.tsx      # 暗态毛玻璃录音灵石
+│   ├── ResultCard.tsx      # 暗黑翻译结果卡
+│   ├── SyncPlayer.tsx      # 滚动歌词播放器
+│   └── DragUpload.tsx      # 拖拽上传
+├── pages/
+│   ├── auth/               # 🚪 登录与注册
+│   │   ├── AuthPage.tsx
+│   │   └── AuthPage.css
+│   ├── user/               # 🧑‍💻 用户工作台
+│   │   ├── UserLayout.tsx  # 悬浮胶囊侧边栏
+│   │   ├── TranslationPage.tsx
+│   │   └── HistoryPage.tsx
+│   └── admin/              # 👨‍🔧 管理员控制台
+│       ├── AdminLayout.tsx
+│       └── AdminDashboard.tsx
+├── styles/  global.css     # 暗夜森林设计令牌 + 毛玻璃
+├── hooks/   useRecorder.ts
+├── services/               # API 接口骨架
+├── App.tsx                 # 三端路由分发中心
+└── main.tsx               # 入口
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## 启动
+```bash
+npm install
+npm run dev
+```
+
+## 路由
+- `/login` — 登录页
+- `/app` — 用户工作台
+- `/admin` — 管理员控制台 (预留)
+
+## 技术栈
+- React 19 + TypeScript
+- Ant Design 6 + @ant-design/icons
+- React Router 7
+- Vite

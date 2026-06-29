@@ -1,59 +1,165 @@
-.wave-wrapper {
+/* ============================================ */
+/* AI 录音球 — 六态呼吸发光系统                    */
+/* ============================================ */
+.ai-orb-zone {
   position: relative;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  width: 200px;
-  height: 200px;
-  margin: 40px auto;
+  justify-content: center;
+  width: 280px;
+  height: 280px;
+  margin: 20px auto 30px;
 }
 
-.record-btn {
+/* --- 核心球体 --- */
+.ai-orb {
   width: 140px;
   height: 140px;
   border-radius: 50%;
-  border: 2px solid var(--color-primary-cyan);
-  background: linear-gradient(135deg, var(--color-primary-dark), #1a3a5f);
-  color: white;
+  border: 2px solid rgba(83, 255, 136, 0.3);
+  background: rgba(20, 20, 20, 0.5);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   cursor: pointer;
   z-index: 10;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 15px rgba(0, 194, 255, 0.3);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  transition: all 0.3s var(--ease-out, cubic-bezier(0.16,1,0.3,1));
+  box-shadow:
+    inset 0 0 20px rgba(83, 255, 136, 0.08),
+    0 0 30px rgba(83, 255, 136, 0.15),
+    0 15px 40px rgba(0, 0, 0, 0.5);
 }
 
-.record-btn:not(.recording):hover {
-  box-shadow: 0 0 25px rgba(0, 194, 255, 0.6);
-  transform: scale(1.05);
+.ai-orb:hover:not(.status-idle):not(.status-finished) {
+  transform: scale(1.04);
 }
 
-.record-btn.recording {
-  background: var(--color-danger);
-  border-color: #ff7675;
-  box-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
-  animation: pulse-red 1.5s infinite alternate;
+.ai-orb .orb-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-@keyframes pulse-red {
-  from { box-shadow: 0 0 10px rgba(255, 71, 87, 0.4); transform: scale(1); }
-  to { box-shadow: 0 0 30px rgba(255, 71, 87, 0.8); transform: scale(1.02); }
+.ai-orb .orb-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--neon-green, #53FF88);
+  filter: drop-shadow(0 0 10px rgba(83, 255, 136, 0.6));
 }
 
-.wave-ring {
+/* --- 各状态 --- */
+.ai-orb.status-idle {
+  animation: orb-idle-breathe 3s ease-in-out infinite;
+}
+@keyframes orb-idle-breathe {
+  0%,100% { box-shadow: inset 0 0 20px rgba(83,255,136,0.06), 0 0 30px rgba(83,255,136,0.1), 0 15px 40px rgba(0,0,0,0.45); }
+  50%     { box-shadow: inset 0 0 30px rgba(83,255,136,0.12), 0 0 50px rgba(83,255,136,0.2), 0 15px 40px rgba(0,0,0,0.45); }
+}
+
+.ai-orb.status-listening {
+  border-color: rgba(83, 255, 136, 0.7);
+  box-shadow: 0 0 40px rgba(83, 255, 136, 0.3);
+  animation: orb-pulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes orb-pulse {
+  from { transform: scale(1); box-shadow: 0 0 30px rgba(83,255,136,0.25); }
+  to   { transform: scale(1.05); box-shadow: 0 0 60px rgba(83,255,136,0.5); }
+}
+
+.ai-orb.status-thinking {
+  border-color: rgba(45, 212, 191, 0.6);
+  box-shadow: 0 0 30px rgba(45, 212, 191, 0.25);
+  animation: orb-spin 3s linear infinite;
+}
+.ai-orb.status-thinking .orb-icon { color: var(--neon-cyan, #2DD4BF); filter: drop-shadow(0 0 10px rgba(45,212,191,0.5)); }
+@keyframes orb-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ai-orb.status-translating {
+  border-color: rgba(83, 255, 136, 0.6);
+  box-shadow: 0 0 35px rgba(83, 255, 136, 0.3);
+  animation: orb-translate-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes orb-translate-pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.06); box-shadow: 0 0 55px rgba(83,255,136,0.45); }
+}
+
+.ai-orb.status-speaking {
+  border-color: rgba(45, 212, 191, 0.7);
+  box-shadow: 0 0 40px rgba(45, 212, 191, 0.3);
+  animation: orb-pulse 0.6s ease-in-out infinite alternate;
+}
+.ai-orb.status-speaking .orb-icon { color: var(--neon-cyan, #2DD4BF); filter: drop-shadow(0 0 12px rgba(45,212,191,0.5)); }
+
+.ai-orb.status-finished {
+  border-color: rgba(83, 255, 136, 0.5);
+  box-shadow: 0 0 25px rgba(83, 255, 136, 0.2);
+}
+
+/* --- 波纹 --- */
+.orb-wave {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid var(--color-danger);
+  border: 1.5px solid var(--neon-green, #53FF88);
   opacity: 0;
-  animation: ripple-spread 2s infinite linear;
+  pointer-events: none;
+  animation: orb-ripple 2.5s infinite cubic-bezier(0.25,0.1,0.25,1);
+}
+.orb-wave-1 { width: 140px; height: 140px; animation-delay: 0s; }
+.orb-wave-2 { width: 140px; height: 140px; animation-delay: 0.8s; }
+.orb-wave-3 { width: 140px; height: 140px; animation-delay: 1.6s; }
+@keyframes orb-ripple {
+  0%   { transform: scale(1); opacity: 0.7; border-width: 2px; box-shadow: 0 0 15px var(--neon-green, #53FF88); }
+  100% { transform: scale(2.5); opacity: 0; border-width: 0px; box-shadow: 0 0 0 var(--neon-green, #53FF88); }
 }
 
-.wave-ring-1 { width: 140px; height: 140px; animation-delay: 0s; }
-.wave-ring-2 { width: 140px; height: 140px; animation-delay: 0.6s; }
-.wave-ring-3 { width: 140px; height: 140px; animation-delay: 1.2s; }
-
-@keyframes ripple-spread {
-  0% { transform: scale(1); opacity: 0.8; border-width: 2px; }
-  100% { transform: scale(2.5); opacity: 0; border-width: 0px; }
+/* --- 粒子 --- */
+.orb-particles {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  pointer-events: none;
 }
+.orb-particle {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--neon-green, #53FF88);
+  box-shadow: 0 0 6px var(--neon-green, #53FF88);
+  animation: particle-drift 2s ease-in-out infinite;
+}
+.orb-particle.p-1 { animation-delay: 0s;   transform: translate(-50%,-50%) rotate(0deg)   translateY(-80px); }
+.orb-particle.p-2 { animation-delay: 0.25s; transform: translate(-50%,-50%) rotate(45deg)  translateY(-80px); }
+.orb-particle.p-3 { animation-delay: 0.5s;  transform: translate(-50%,-50%) rotate(90deg)  translateY(-80px); }
+.orb-particle.p-4 { animation-delay: 0.75s; transform: translate(-50%,-50%) rotate(135deg) translateY(-80px); }
+.orb-particle.p-5 { animation-delay: 1s;    transform: translate(-50%,-50%) rotate(180deg) translateY(-80px); }
+.orb-particle.p-6 { animation-delay: 1.25s; transform: translate(-50%,-50%) rotate(225deg) translateY(-80px); }
+.orb-particle.p-7 { animation-delay: 1.5s;  transform: translate(-50%,-50%) rotate(270deg) translateY(-80px); }
+.orb-particle.p-8 { animation-delay: 1.75s; transform: translate(-50%,-50%) rotate(315deg) translateY(-80px); }
+@keyframes particle-drift {
+  0%,100% { opacity: 0.2; transform: translate(-50%,-50%) rotate(var(--angle, 0deg)) translateY(-75px); }
+  50%     { opacity: 0.9; transform: translate(-50%,-50%) rotate(var(--angle, 0deg)) translateY(-90px); }
+}
+
+/* --- 状态标签 --- */
+.orb-status-label {
+  margin-top: 16px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: color 0.3s;
+}
+.orb-status-label.status-idle        { color: var(--c-ink-muted, #9CA3AF); }
+.orb-status-label.status-listening   { color: var(--neon-green, #53FF88); }
+.orb-status-label.status-thinking    { color: var(--neon-cyan, #2DD4BF); }
+.orb-status-label.status-translating { color: var(--neon-green, #53FF88); }
+.orb-status-label.status-speaking    { color: var(--neon-cyan, #2DD4BF); }
+.orb-status-label.status-finished    { color: rgba(83, 255, 136, 0.7); }

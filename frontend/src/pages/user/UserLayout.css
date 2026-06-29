@@ -1,0 +1,150 @@
+/* ============================================ */
+/* 三栏沉浸式工作台布局                           */
+/* ============================================ */
+.user-workspace {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* --- 左侧悬浮胶囊侧边栏 --- */
+.floating-sidebar {
+  position: fixed;
+  top: 16px; bottom: 16px; left: 16px;
+  width: 72px;
+  border-radius: 36px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px 0;
+  z-index: 100;
+  background: rgba(20, 20, 20, 0.5) !important;
+}
+
+.brand-logo { display: flex; gap: 4px; margin-bottom: 36px; cursor: pointer; }
+.brand-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background-color: var(--neon-green, #53FF88);
+  box-shadow: 0 0 8px var(--neon-green, #53FF88);
+}
+.brand-logo .brand-dot:nth-child(2) { height: 12px; border-radius: 6px; transform: translateY(-3px); }
+
+.nav-menu { display: flex; flex-direction: column; gap: 20px; width: 100%; align-items: center; }
+
+.nav-item {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; justify-content: center; align-items: center;
+  font-size: 19px; color: rgba(255,255,255,0.35);
+  cursor: pointer; transition: all 0.25s var(--ease-out, cubic-bezier(0.16,1,0.3,1));
+}
+.nav-item:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+  transform: scale(1.1);
+}
+.nav-item.active {
+  color: var(--neon-green, #53FF88);
+  background: rgba(83, 255, 136, 0.12);
+  box-shadow: inset 0 0 10px rgba(83,255,136,0.15), 0 0 16px rgba(83,255,136,0.08);
+}
+
+.sidebar-bottom { display: flex; flex-direction: column; gap: 18px; align-items: center; }
+
+.user-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  display: flex; justify-content: center; align-items: center;
+  font-size: 18px; color: #fff; cursor: pointer;
+  transition: all 0.25s;
+}
+.user-avatar:hover { border-color: var(--neon-green, #53FF88); box-shadow: 0 0 12px rgba(83,255,136,0.25); }
+
+/* --- 中间主内容区 --- */
+.main-content {
+  flex: 1;
+  margin-left: 108px;        /* 72 sidebar + 16 gap + 20 pad */
+  margin-right: 320px;       /* 300 panel + 20 gap */
+  padding: 36px 24px 60px;
+  min-height: 100vh;
+  overflow-y: auto;
+  position: relative;
+  z-index: 10;
+}
+
+/* --- 右侧信息栏 --- */
+.right-panel {
+  position: fixed;
+  top: 16px; right: 16px; bottom: 16px;
+  width: 288px;
+  padding: 24px 20px;
+  overflow-y: auto;
+  z-index: 100;
+  background: rgba(20, 20, 20, 0.45) !important;
+  border-radius: 20px !important;
+}
+
+.panel-section {
+  margin-bottom: 28px;
+}
+.panel-title {
+  font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neon-green, #53FF88);
+  margin-bottom: 14px;
+}
+
+/* 最近翻译 */
+.recent-item {
+  display: flex; align-items: center; padding: 8px 12px;
+  border-radius: 10px; cursor: pointer; margin-bottom: 4px;
+  transition: background 0.2s;
+  border: 1px solid transparent;
+}
+.recent-item:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
+.recent-src { color: var(--c-ink, #F5F7FA); font-size: 13px; }
+.recent-tgt { color: var(--c-ink-muted, #9CA3AF); font-size: 13px; }
+
+/* AI 状态行 */
+.status-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0; font-size: 13px; color: var(--c-ink-muted, #9CA3AF);
+}
+.status-row span { margin-left: auto; color: var(--c-ink, #F5F7FA); font-weight: 500; }
+.status-row .online { color: var(--neon-green, #53FF88); }
+
+/* 快捷键 */
+.kbd-row {
+  font-size: 12px; color: var(--c-ink-muted, #9CA3AF);
+  padding: 4px 0;
+}
+.kbd-row kbd {
+  display: inline-block;
+  padding: 1px 7px; border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px; color: var(--c-ink, #F5F7FA);
+  margin-right: 6px;
+}
+
+/* --- 动画 --- */
+.fade-in-left {
+  animation: fadeInLeft 0.6s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* --- 响应式 --- */
+@media (max-width: 1100px) {
+  .right-panel { display: none; }
+  .main-content { margin-right: 20px; }
+}
+@media (max-width: 768px) {
+  .floating-sidebar { display: none; }
+  .main-content { margin-left: 20px; }
+}

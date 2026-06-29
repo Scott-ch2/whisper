@@ -19,18 +19,14 @@ export const useRecorder = () => {
 
       mediaRecorder.current.onstop = () => {
         const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-        // 伪装成 File 对象，方便后续统一上传逻辑
-        const file = new File([audioBlob], `record_${new Date().getTime()}.webm`, { type: 'audio/webm' });
+        const file = new File([audioBlob], `record_${Date.now()}.webm`, { type: 'audio/webm' });
         setAudioFile(file);
-
-        // 释放麦克风硬件资源
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       };
 
       mediaRecorder.current.start();
       setIsRecording(true);
-    } catch (err) {
-      console.error('获取麦克风失败:', err);
+    } catch {
       message.error('无法获取麦克风权限，请检查浏览器设置');
     }
   };

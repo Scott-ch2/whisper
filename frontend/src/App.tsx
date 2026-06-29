@@ -1,31 +1,33 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
-import { AppLayout } from './components/AppLayout';
-import { TranslationPage } from './pages/TranslationPage';
-// import { AuthPage } from './pages/AuthPage';
-// import { HistoryPage } from './pages/HistoryPage';
+import { AuthPage } from './pages/auth';
+import { UserLayout } from './pages/user';
+import { TranslationPage } from './pages/user';
 import './styles/global.css';
 
 const App: React.FC = () => {
   return (
-    <ConfigProvider theme={{
-      token: {
-        colorPrimary: '#0a2540',
-        colorInfo: '#00c2ff',
-        colorSuccess: '#00e5a0',
-        fontFamily: 'inherit',
-      }
-    }}>
+    <ConfigProvider theme={{ token: { colorPrimary: '#4ADE80', fontFamily: 'inherit', colorText: '#ffffff' } }}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<AppLayout />}>
+          {/* 登录页配置 */}
+          <Route path="/login" element={
+            <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+              <img className="fullscreen-bg-video" src="/forest.png" alt="" style={{ opacity: 1, filter: 'none', objectFit: 'cover' }} />
+              <div className="video-overlay" style={{
+                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                background: 'radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.25) 100%)',
+                backdropFilter: 'none'
+              }}></div>
+              <AuthPage />
+            </div>
+          } />
+
+          <Route path="/app" element={<UserLayout />}>
             <Route index element={<TranslationPage />} />
-            {/* 暂时注释掉还没写的页面，防止报错 */}
-            {/* <Route path="login" element={<AuthPage />} /> */}
-            {/* <Route path="history" element={<HistoryPage />} /> */}
-            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </ConfigProvider>

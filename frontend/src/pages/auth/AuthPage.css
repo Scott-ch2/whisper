@@ -1,0 +1,26 @@
+@font-face {
+  font-family: 'Amigate';
+  src: url('/fonts/amigate.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.auth-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; position: relative; z-index: 10; }
+.aura-auth-card { width: 100%; max-width: 400px; padding: 40px; background: rgba(20, 25, 30, 0.4) !important; backdrop-filter: blur(20px) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+.aura-header { text-align: center; margin-bottom: 30px; }
+.aura-wave-logo { display: flex; justify-content: center; gap: 4px; height: 30px; align-items: center; margin-bottom: 10px; }
+.bar { width: 4px; background: #4ade80; border-radius: 4px; height: 20px; }
+.aura-title { color: #fff; margin: 0; font-size: 24px; }
+.text-green { color: #4ade80; }
+.input-wrapper { margin-bottom: 20px; }
+.input-wrapper label { color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 8px; display: block; }
+.aura-input-group { display: flex; align-items: center; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
+.aura-input-group input { background: transparent; border: none; color: #fff; margin-left: 10px; width: 100%; outline: none; }
+.input-icon { color: #4ade80; }
+.aura-login-btn { width: 100%; padding: 12px; background: #4ade80; border: none; border-radius: 25px; color: #000; font-weight: bold; cursor: pointer; transition: 0.3s; }
+.aura-login-btn:hover { box-shadow: 0 0 20px rgba(74,222,128,0.5); }
+.aura-divider { text-align: center; color: rgba(255,255,255,0.3); margin: 20px 0; font-size: 12px; }
+.social-login { display: flex; justify-content: center; gap: 15px; }
+.social-btn { border-radius: 50%; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; }
+.aura-footer { text-align: center; margin-top: 20px; font-size: 12px; color: rgba(255,255,255,0.5); }
+.signup-link { color: #4ade80; cursor: pointer; }
