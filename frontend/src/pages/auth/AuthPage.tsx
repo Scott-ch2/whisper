@@ -5,7 +5,15 @@ import './AuthPage.css';
 
 export const AuthPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setTimeout(() => navigate(isAdmin ? '/admin' : '/app'), 800);
+  };
+
   return (
     <div className="auth-container">
       <div className="glass-card aura-auth-card fade-in-up">
@@ -16,7 +24,7 @@ export const AuthPage: React.FC = () => {
           </div>
           <h2 className="aura-title" style={{ fontFamily: "'Amigate', serif", fontSize: 36, letterSpacing: '3px', textShadow: '0 0 20px rgba(74,222,128,0.6)' }}>Whisper</h2>
         </div>
-        <form className="aura-form" onSubmit={(e) => { e.preventDefault(); setIsLoading(true); setTimeout(() => navigate('/app'), 1000); }}>
+        <form className="aura-form" onSubmit={handleLogin}>
           <div className="input-wrapper">
             <label>Email</label>
             <div className="aura-input-group"><UserOutlined className="input-icon" /><input type="email" required placeholder="Email Address" /></div>
@@ -25,7 +33,29 @@ export const AuthPage: React.FC = () => {
             <label>Password</label>
             <div className="aura-input-group"><KeyOutlined className="input-icon" /><input type="password" required placeholder="••••••••" /></div>
           </div>
-          <button type="submit" className="aura-login-btn" disabled={isLoading}>{isLoading ? 'Connecting...' : 'Log In'}</button>
+          {/* Admin toggle */}
+          <div className="input-wrapper" style={{ marginTop: -4 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+              <span
+                onClick={(e) => { e.preventDefault(); setIsAdmin(!isAdmin); }}
+                style={{
+                  width: 36, height: 20, borderRadius: 10,
+                  background: isAdmin ? 'var(--c-green-400)' : 'rgba(255,255,255,0.15)',
+                  position: 'relative', transition: 'all 0.25s var(--ease-out-expo)',
+                }}
+              >
+                <span style={{
+                  position: 'absolute', top: 2, left: isAdmin ? 18 : 2,
+                  width: 16, height: 16, borderRadius: '50%',
+                  background: '#fff', transition: 'all 0.25s var(--ease-out-expo)',
+                }} />
+              </span>
+              Admin Mode
+            </label>
+          </div>
+          <button type="submit" className="aura-login-btn" disabled={isLoading}>
+            {isLoading ? 'Connecting...' : isAdmin ? 'Enter Control Center' : 'Log In'}
+          </button>
         </form>
         <div className="aura-divider"><span>Or continue with</span></div>
         <div className="social-login">

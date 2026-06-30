@@ -2,8 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import { AuthPage } from './pages/auth';
-import { UserLayout } from './pages/user';
-import { TranslationPage } from './pages/user';
+import { UserLayout, TranslationPage } from './pages/user';
+import { AdminLayout, AdminDashboard, AdminUsers, AdminMonitor, AdminHistory, AdminModels, AdminAnalytics, AdminSettings } from './pages/admin';
 import './styles/global.css';
 
 const App: React.FC = () => {
@@ -21,7 +21,6 @@ const App: React.FC = () => {
     >
       <BrowserRouter>
         <Routes>
-          {/* Login */}
           <Route path="/login" element={
             <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
               <img className="fullscreen-bg-video" src="/forest.png" alt="" />
@@ -31,13 +30,18 @@ const App: React.FC = () => {
               <AuthPage />
             </div>
           } />
-
-          {/* Main App */}
           <Route path="/app" element={<UserLayout />}>
             <Route index element={<TranslationPage />} />
           </Route>
-
-          {/* Fallback */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="monitor" element={<AdminMonitor />} />
+            <Route path="history" element={<AdminHistory />} />
+            <Route path="models" element={<AdminModels />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
