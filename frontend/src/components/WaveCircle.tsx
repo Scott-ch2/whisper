@@ -1,4 +1,9 @@
 import React from 'react';
+import {
+  AudioOutlined, BulbOutlined, TranslationOutlined,
+  SoundOutlined, CheckCircleOutlined,
+} from '@ant-design/icons';
+import './WaveCircle.css';
 
 interface WaveCircleProps {
   status: 'idle' | 'listening' | 'thinking' | 'translating' | 'speaking' | 'finished';
@@ -14,58 +19,77 @@ const statusLabel: Record<string, string> = {
   finished: 'Finished',
 };
 
+/* ── Sub-label below main status ─────────────────────────────────────── */
+const statusSub: Record<string, string> = {
+  idle: 'Click to Start',
+  listening: 'Recording audio…',
+  thinking: 'Processing…',
+  translating: 'Generating translation…',
+  speaking: 'Playing back…',
+  finished: 'Tap to record again',
+};
+
+const OrbIcon: React.FC<{ status: string }> = ({ status }) => {
+  const s: React.CSSProperties = { fontSize: 36, display: 'flex' };
+  switch (status) {
+    case 'finished':    return <CheckCircleOutlined style={s} />;
+    case 'thinking':    return <BulbOutlined style={s} />;
+    case 'translating': return <TranslationOutlined style={s} />;
+    case 'speaking':    return <SoundOutlined style={s} />;
+    case 'listening':   return <AudioOutlined style={s} />;
+    default:            return <AudioOutlined style={s} />;
+  }
+};
+
+const PARTICLE_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
 export const WaveCircle: React.FC<WaveCircleProps> = ({ status, onClick }) => {
   const isActive = status !== 'idle' && status !== 'finished';
+  const isIdleOrFinished = status === 'idle' || status === 'finished';
+  const showRipple = status === 'listening' || status === 'speaking';
 
   return (
     <div className="ai-orb-zone">
-      {/* 粒子光点 (仅活跃状态) */}
+      <div className={`orb-ambient-glow ${isActive ? 'active' : ''}`} />
+
+      {showRipple && (
+        <>
+          <div className="orb-ripple orb-ripple-1" />
+          <div className="orb-ripple orb-ripple-2" />
+          <div className="orb-ripple orb-ripple-3" />
+        </>
+      )}
+
       {isActive && (
         <div className="orb-particles">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <span key={i} className={`orb-particle p-${i + 1}`} />
+          {PARTICLE_ANGLES.map((angle, i) => (
+            <span
+              key={i}
+              className="orb-particle"
+              style={{ '--angle': `${angle}deg`, animationDelay: `${i * 0.3}s` } as React.CSSProperties}
+            />
           ))}
         </div>
       )}
 
-      {/* 波纹扩散 (listening + speaking) */}
-      {(status === 'listening' || status === 'speaking') && (
-        <>
-          <div className="orb-wave orb-wave-1" />
-          <div className="orb-wave orb-wave-2" />
-          <div className="orb-wave orb-wave-3" />
-        </>
-      )}
-
-      {/* 核心 AI 球 */}
       <button
         className={`ai-orb status-${status}`}
         onClick={onClick}
         aria-label={statusLabel[status]}
+        type="button"
       >
         <div className="orb-inner">
-          <svg viewBox="0 0 24 24" className="orb-icon" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            {status === 'finished' ? (
-              <path d="M20 6 9 17l-5-5" />
-            ) : status === 'thinking' || status === 'translating' ? (
-              <>
-                <circle cx="12" cy="4" r="2" />
-                <path d="M10.4 8.4a4 4 0 0 1 6.3 4.9" />
-                <path d="M16.8 18A7 7 0 0 1 5.2 13" />
-              </>
-            ) : (
-              <>
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                <line x1="12" x2="12" y1="19" y2="22" />
-              </>
-            )}
-          </svg>
+          <div className="orb-icon"><OrbIcon status={status} /></div>
         </div>
       </button>
 
-      {/* 状态标签 */}
-      <div className={`orb-status-label status-${status}`}>{statusLabel[status]}</div>
+      <div className={`orb-status-label status-${status}`}>
+        <div className="orb-status-label-main">
+          {isIdleOrFinished && <span className={`status-dot status-${status}`} />}
+          {statusLabel[status]}
+        </div>
+        <div className="orb-status-label-sub">{statusSub[status]}</div>
+      </div>
     </div>
   );
 };

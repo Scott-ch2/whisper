@@ -8,25 +8,36 @@ import './styles/global.css';
 
 const App: React.FC = () => {
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#4ADE80', fontFamily: 'inherit', colorText: '#ffffff' } }}>
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: '#4ADE80',
+          fontFamily: 'inherit',
+          colorText: '#F2F5F3',
+          colorBgElevated: 'rgba(8,14,10,0.92)',
+          borderRadius: 10,
+        },
+      }}
+    >
       <BrowserRouter>
         <Routes>
-          {/* 登录页配置 */}
+          {/* Login */}
           <Route path="/login" element={
             <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-              <img className="fullscreen-bg-video" src="/forest.png" alt="" style={{ opacity: 1, filter: 'none', objectFit: 'cover' }} />
-              <div className="video-overlay" style={{
-                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                background: 'radial-gradient(circle at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.25) 100%)',
-                backdropFilter: 'none'
-              }}></div>
+              <img className="fullscreen-bg-video" src="/forest.png" alt="" />
+              <div className="volumetric-overlay" />
+              <div className="fog-layer" />
+              <div className="dark-vignette" />
               <AuthPage />
             </div>
           } />
 
+          {/* Main App */}
           <Route path="/app" element={<UserLayout />}>
             <Route index element={<TranslationPage />} />
           </Route>
+
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
