@@ -30,8 +30,8 @@ public class TranslationControllerV2 {
     private final InferenceClient inferenceClient;
     private final SimpMessagingTemplate messagingTemplate;
 
-    private static final String UPLOAD_DIR = "./uploads/audio/";
 
+   private static final String UPLOAD_DIR = "C:/Users/Lenovo/Desktop/whisper/data/uploads/audio/";
     /**
      * 上传音频并创建翻译任务
      *
