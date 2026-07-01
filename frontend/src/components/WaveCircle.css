@@ -150,7 +150,7 @@
   }
 }
 
-.ai-orb.status-listening {
+.ai-orb.status-recording {
   border-color: rgba(74,222,128,0.65);
   animation: orbPulse 1.4s ease-in-out infinite alternate;
 }
@@ -159,33 +159,13 @@
   to   { transform: scale(1.05); box-shadow: inset 0 0 80px rgba(74,222,128,0.18), 0 0 140px rgba(74,222,128,0.4), 0 0 260px rgba(74,222,128,0.14); }
 }
 
-.ai-orb.status-thinking {
+.ai-orb.status-processing {
   border-color: rgba(45,212,191,0.55);
   box-shadow: inset 0 0 55px rgba(45,212,191,0.12), 0 0 80px rgba(45,212,191,0.25), 0 0 160px rgba(45,212,191,0.08);
   animation: orbSpin 3.5s linear infinite;
 }
-.ai-orb.status-thinking .orb-icon { color: #2DD4BF; filter: drop-shadow(0 0 18px rgba(45,212,191,0.5)); }
+.ai-orb.status-processing .orb-icon { color: #2DD4BF; filter: drop-shadow(0 0 18px rgba(45,212,191,0.5)); }
 @keyframes orbSpin { to { transform: rotate(360deg); } }
-
-.ai-orb.status-translating {
-  border-color: rgba(74,222,128,0.68);
-  animation: orbFastPulse 0.6s ease-in-out infinite alternate;
-}
-@keyframes orbFastPulse {
-  from { transform: scale(1);    box-shadow: inset 0 0 70px rgba(74,222,128,0.14), 0 0 90px rgba(74,222,128,0.32), 0 0 170px rgba(74,222,128,0.12); }
-  to   { transform: scale(1.06); box-shadow: inset 0 0 90px rgba(74,222,128,0.22), 0 0 150px rgba(74,222,128,0.5), 0 0 280px rgba(74,222,128,0.18); }
-}
-
-.ai-orb.status-speaking {
-  border-color: rgba(45,212,191,0.6);
-  animation: orbPulse 0.4s ease-in-out infinite alternate;
-}
-.ai-orb.status-speaking .orb-icon { color: #2DD4BF; filter: drop-shadow(0 0 22px rgba(45,212,191,0.5)); }
-
-.ai-orb.status-finished {
-  border-color: rgba(74,222,128,0.5);
-  box-shadow: inset 0 0 45px rgba(74,222,128,0.08), 0 0 70px rgba(74,222,128,0.16), 0 0 120px rgba(74,222,128,0.06);
-}
 
 /* ── Status Label — centered below orb ────────────────────────────────── */
 .orb-status-label {
@@ -232,8 +212,5 @@
 }
 
 .orb-status-label.status-idle        .orb-status-label-main { color: var(--ink-secondary); }
-.orb-status-label.status-listening   .orb-status-label-main { color: var(--accent); }
-.orb-status-label.status-thinking    .orb-status-label-main { color: #2DD4BF; }
-.orb-status-label.status-translating .orb-status-label-main { color: var(--accent); }
-.orb-status-label.status-speaking    .orb-status-label-main { color: #2DD4BF; }
-.orb-status-label.status-finished    .orb-status-label-main { color: rgba(74,222,128,0.7); }
+.orb-status-label.status-recording   .orb-status-label-main { color: var(--accent); }
+.orb-status-label.status-processing  .orb-status-label-main { color: #2DD4BF; }

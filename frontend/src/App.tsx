@@ -2,8 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import { AuthPage } from './pages/auth';
-import { UserLayout, TranslationPage, HistoryPage } from './pages/user';
-import { AdminLayout, AdminDashboard, AdminUsers, AdminMonitor, AdminHistory, AdminModels, AdminAnalytics, AdminSettings } from './pages/admin';
+import { UserLayout, TranslationPage, HistoryPage, ProfilePage } from './pages/user';
+import { AdminLayout, AdminDashboard, AdminUsers, AdminRecords, AdminProfilePage } from './pages/admin';
 import './styles/global.css';
 
 const App: React.FC = () => {
@@ -21,27 +21,17 @@ const App: React.FC = () => {
     >
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={
-            <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-              <img className="fullscreen-bg-video" src="/forest.png" alt="" />
-              <div className="volumetric-overlay" />
-              <div className="fog-layer" />
-              <div className="dark-vignette" />
-              <AuthPage />
-            </div>
-          } />
+          <Route path="/login" element={<AuthPage />} />
           <Route path="/app" element={<UserLayout />}>
             <Route index element={<TranslationPage />} />
             <Route path="history" element={<HistoryPage />} />
+            <Route path="profile" element={<ProfilePage />} />
           </Route>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
-            <Route path="monitor" element={<AdminMonitor />} />
-            <Route path="history" element={<AdminHistory />} />
-            <Route path="models" element={<AdminModels />} />
-            <Route path="analytics" element={<AdminAnalytics />} />
-            <Route path="settings" element={<AdminSettings />} />
+            <Route path="records" element={<AdminRecords />} />
+            <Route path="profile" element={<AdminProfilePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

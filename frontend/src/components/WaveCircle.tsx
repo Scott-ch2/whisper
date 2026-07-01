@@ -1,52 +1,41 @@
 import React from 'react';
 import {
-  AudioOutlined, BulbOutlined, TranslationOutlined,
-  SoundOutlined, CheckCircleOutlined,
+  AudioOutlined, BulbOutlined, LoadingOutlined,
 } from '@ant-design/icons';
 import './WaveCircle.css';
 
+export type OrbStatus = 'idle' | 'recording' | 'processing';
+
 interface WaveCircleProps {
-  status: 'idle' | 'listening' | 'thinking' | 'translating' | 'speaking' | 'finished';
+  status: OrbStatus;
   onClick: () => void;
 }
 
-const statusLabel: Record<string, string> = {
+const statusLabel: Record<OrbStatus, string> = {
   idle: 'Ready',
-  listening: 'Listening…',
-  thinking: 'Thinking…',
-  translating: 'Translating…',
-  speaking: 'Speaking…',
-  finished: 'Finished',
+  recording: 'Recording…',
+  processing: 'Processing…',
 };
 
-/* ── Sub-label below main status ─────────────────────────────────────── */
-const statusSub: Record<string, string> = {
-  idle: 'Click to Start',
-  listening: 'Recording audio…',
-  thinking: 'Processing…',
-  translating: 'Generating translation…',
-  speaking: 'Playing back…',
-  finished: 'Tap to record again',
+const statusSub: Record<OrbStatus, string> = {
+  idle: 'Click to record',
+  recording: 'Listening… tap to stop',
+  processing: 'Transcribing & Translating…',
 };
 
-const OrbIcon: React.FC<{ status: string }> = ({ status }) => {
+const OrbIcon: React.FC<{ status: OrbStatus }> = ({ status }) => {
   const s: React.CSSProperties = { fontSize: 36, display: 'flex' };
   switch (status) {
-    case 'finished':    return <CheckCircleOutlined style={s} />;
-    case 'thinking':    return <BulbOutlined style={s} />;
-    case 'translating': return <TranslationOutlined style={s} />;
-    case 'speaking':    return <SoundOutlined style={s} />;
-    case 'listening':   return <AudioOutlined style={s} />;
-    default:            return <AudioOutlined style={s} />;
+    case 'processing': return <LoadingOutlined style={{ ...s, fontSize: 32 }} />;
+    default:           return <AudioOutlined style={s} />;
   }
 };
 
 const PARTICLE_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
 
 export const WaveCircle: React.FC<WaveCircleProps> = ({ status, onClick }) => {
-  const isActive = status !== 'idle' && status !== 'finished';
-  const isIdleOrFinished = status === 'idle' || status === 'finished';
-  const showRipple = status === 'listening' || status === 'speaking';
+  const isActive = status === 'recording' || status === 'processing';
+  const showRipple = status === 'recording';
 
   return (
     <div className="ai-orb-zone">
@@ -85,7 +74,7 @@ export const WaveCircle: React.FC<WaveCircleProps> = ({ status, onClick }) => {
 
       <div className={`orb-status-label status-${status}`}>
         <div className="orb-status-label-main">
-          {isIdleOrFinished && <span className={`status-dot status-${status}`} />}
+          {status === 'idle' && <span className="status-dot status-idle" />}
           {statusLabel[status]}
         </div>
         <div className="orb-status-label-sub">{statusSub[status]}</div>

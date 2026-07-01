@@ -18,4 +18,6 @@ public class User {
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    @TableLogic
+    private Integer deleted;
 }

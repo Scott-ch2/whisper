@@ -457,6 +457,123 @@
   RESPONSIVE
   ══════════════════════════════════════════════════════════════════════════════*/
 
+/* ── Records Table ────────────────────────────────────────────────── */
+.records-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.records-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  height: 44px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  flex: 1;
+  max-width: 420px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.records-search:focus-within {
+  border-color: rgba(74, 222, 128, 0.2);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.06);
+}
+
+.records-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 13px;
+  font-family: var(--font-sans);
+}
+
+.records-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.records-table {
+  border-radius: 16px;
+  background: rgba(12, 20, 16, 0.45);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.records-table-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.records-table-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  transition: background 0.2s;
+}
+
+.records-table-row:last-child {
+  border-bottom: none;
+}
+
+.records-table-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.records-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.records-action-btn:hover {
+  border-color: rgba(74, 222, 128, 0.2);
+  color: var(--accent);
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.records-action-btn.del:hover {
+  border-color: rgba(255, 80, 80, 0.2);
+  color: #ff5c5c;
+  background: rgba(255, 80, 80, 0.05);
+}
+
+/* ── Avatar overlay hover ──────────────────────────────────────────── */
+.avatar-overlay-show {
+  opacity: 0 !important;
+}
+*:hover > .avatar-overlay-show {
+  opacity: 1 !important;
+}
+
 @media (max-width: 1100px) {
   .monitor-grid, .analytics-grid, .settings-layout { grid-template-columns: 1fr; }
 }
@@ -464,4 +581,61 @@
   .admin-sidebar { display: none; }
   .admin-content { margin-left: 12px; padding: 24px 14px 40px; }
   .stat-cards-row { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── User Freeze Styles ───────────────────────────────────────────── */
+.badge-active {
+  background: rgba(74,222,128,0.12) !important;
+  color: var(--accent) !important;
+}
+.badge-frozen {
+  background: rgba(255, 159, 28, 0.15) !important;
+  color: #FF9F1C !important;
+  border-color: rgba(255, 159, 28, 0.3) !important;
+}
+
+.user-card-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-right: 12px;
+}
+
+.user-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.22s var(--ease-out-expo);
+}
+
+.user-action-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow-soft);
+}
+
+.user-action-btn.freeze-btn:hover {
+  border-color: #FF9F1C;
+  color: #FF9F1C;
+  box-shadow: 0 0 12px rgba(255, 159, 28, 0.25);
+}
+
+.user-action-btn.unfreeze-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow-soft);
+}
+
+.user-action-btn.delete-btn:hover {
+  border-color: #FF4D4F;
+  color: #FF4D4F;
+  box-shadow: 0 0 12px rgba(255, 77, 79, 0.25);
 }

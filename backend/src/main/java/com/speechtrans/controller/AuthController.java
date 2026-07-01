@@ -32,15 +32,21 @@ public class AuthController {
         if (user == null || !passwordEncoder.matches(req.getPassword(), user.getPassword())) {
             return Result.error(401, "用户名或密码错误");
         }
-        if (user.getStatus() == 0) {
-            return Result.error(403, "账号已被禁用");
+        if (user.getStatus() == 2) {
+            return Result.error(403, "账号已被冻结");
         }
         // 更新最后登录时间
         user.setLastLogin(LocalDateTime.now());
         userMapper.updateById(user);
 
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
-        return Result.success(new LoginResponse(token, user.getUsername(), user.getRole()));
+        return Result.success(new LoginResponse(
+                token,
+                user.getUsername(),
+                user.getRole(),
+                user.getEmail() != null ? user.getEmail() : "",
+                user.getAvatar() != null ? user.getAvatar() : ""
+        ));
     }
 
     @PostMapping("/register")

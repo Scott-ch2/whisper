@@ -1,35 +1,83 @@
-  @font-face {
-  font-family: 'Amigate';
-  src: url('/fonts/amigate.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
+/*══════════════════════════════════════════════════════════════════════════════
+  AuthPage — Forest Glass × Vision Pro
+  v3 — Single focal point: only the card matters
+  ══════════════════════════════════════════════════════════════════════════════*/
+
+/* ── Page Container ─────────────────────────────────────────────────────── */
+.auth-page {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
-.auth-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+/* ── Background — JDI forest, crisp ──────────────────────────── */
+.auth-bg-img {
+  filter: brightness(0.95) saturate(1.05) blur(1px) !important;
+  transition: none !important;
+}
+
+/* Barely-there veil — just enough to soften the busiest details */
+.auth-bg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  background: rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+/* ── Center focus glow — barely-there highlight behind card ────────── */
+.auth-center-glow {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(74, 222, 128, 0.04) 0%,
+    rgba(74, 222, 128, 0.01) 35%,
+    transparent 60%
+  );
+  z-index: 5;
+  pointer-events: none;
+  animation: centerGlowPulse 5s ease-in-out infinite alternate;
+}
+
+@keyframes centerGlowPulse {
+  0%   { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 1;   transform: translate(-50%, -50%) scale(1.06); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CARD — the single focal point (唯一视觉中心 + 唯一操作中心)
+   ══════════════════════════════════════════════════════════════════════════ */
+.auth-card {
   position: relative;
   z-index: 10;
-}
-
-.aura-auth-card {
   width: 100%;
-  max-width: 420px;
-  padding: 44px 40px;
-  background: rgba(10, 14, 12, 0.5) !important;
-  backdrop-filter: blur(32px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  border-radius: 24px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-  position: relative;
+  max-width: 400px;
+  padding: 32px 32px 28px;
+  background: rgba(5, 10, 7, 0.65);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  box-shadow:
+    0 0 80px rgba(74, 222, 128, 0.10),
+    0 24px 80px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
   overflow: hidden;
 }
 
 /* Glass sheen */
-.aura-auth-card::before {
+.auth-card::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -37,180 +85,291 @@
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.04) 0%,
-    transparent 40%,
-    rgba(74, 222, 128, 0.03) 60%,
+    transparent 35%,
+    rgba(74, 222, 128, 0.02) 55%,
     transparent 100%
   );
   pointer-events: none;
+  z-index: 0;
 }
 
-.aura-header {
+.auth-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Floating animation — subtle, ±3px */
+.auth-card {
+  animation: cardFloat 6s ease-in-out infinite;
+}
+
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CARD HEADER — brand lives here, demoted inside the card
+   ══════════════════════════════════════════════════════════════════════════ */
+.auth-card-header {
   text-align: center;
-  margin-bottom: 34px;
+  margin-bottom: 28px;
 }
 
-.aura-wave-logo {
+/* ── Wave Logo ──────────────────────────────────────────────────────────── */
+.auth-logo {
   display: flex;
   justify-content: center;
   gap: 4px;
-  height: 28px;
+  height: 24px;
   align-items: center;
   margin-bottom: 14px;
 }
 
-.bar {
-  width: 4px;
-  background: var(--c-green-400);
-  border-radius: 4px;
-  height: 18px;
-  box-shadow: 0 0 8px var(--c-green-400);
-  transition: height 0.3s var(--ease-out-expo);
+.auth-logo .bar {
+  width: 3.5px;
+  background: var(--accent);
+  border-radius: 3px;
+  box-shadow: 0 0 4px var(--accent-glow);
+  height: 14px;
 }
 
-.aura-wave-logo:hover .bar-1 { height: 28px; }
-.aura-wave-logo:hover .bar-2 { height: 22px; }
-.aura-wave-logo:hover .bar-3 { height: 24px; }
-.aura-wave-logo:hover .bar-4 { height: 20px; }
-.aura-wave-logo:hover .bar-5 { height: 26px; }
+/* Idle wave breathing */
+.auth-logo .bar-1 { height: 10px; animation: waveIdle 2.8s ease-in-out infinite 0s; }
+.auth-logo .bar-2 { height: 16px; animation: waveIdle 2.8s ease-in-out infinite 0.15s; }
+.auth-logo .bar-3 { height: 22px; animation: waveIdle 2.8s ease-in-out infinite 0.3s; }
+.auth-logo .bar-4 { height: 16px; animation: waveIdle 2.8s ease-in-out infinite 0.45s; }
+.auth-logo .bar-5 { height: 10px; animation: waveIdle 2.8s ease-in-out infinite 0.6s; }
 
-.aura-title {
-  color: #fff;
+@keyframes waveIdle {
+  0%, 100% { height: 10px; }
+  25% { height: 22px; }
+  50% { height: 14px; }
+  75% { height: 18px; }
+}
+
+/* ── Title — demoted, embedded in card ─────────────────────────────────── */
+.auth-title {
   margin: 0;
-  font-size: 34px;
+  font-family: var(--font-display);
+  font-size: 28px;
   font-weight: 400;
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 30px rgba(74, 222, 128, 0.3), 0 0 60px rgba(74, 222, 128, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 2.5px;
+  text-shadow: none;
+  line-height: 1.2;
 }
 
-.input-wrapper {
-  margin-bottom: 20px;
+/* ── Subtitle ───────────────────────────────────────────────────────────── */
+.auth-subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 450;
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 1px;
 }
 
-.input-wrapper label {
-  color: var(--ink-secondary);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
+/* ══════════════════════════════════════════════════════════════════════════
+   FORM
+   ══════════════════════════════════════════════════════════════════════════ */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Field ───────────────────────────────────────────────────────────────── */
+.auth-field label {
   display: block;
+  margin-bottom: 5px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.25);
 }
 
-.aura-input-group {
+/* Extra fields (register) — subtle fade-in */
+.auth-field-extra {
+  animation: fieldIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fieldIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Input — very lightweight glass ──────────────────────────────────────── */
+.auth-input-wrap {
   display: flex;
   align-items: center;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 13px 15px;
-  border-radius: 12px;
+  height: 44px;
+  padding: 0 13px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  transition: all 0.3s var(--ease-out-expo);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.aura-input-group:focus-within {
-  border-color: rgba(74, 222, 128, 0.3);
-  box-shadow: 0 0 12px rgba(74, 222, 128, 0.1);
+.auth-input-wrap:focus-within {
+  border-color: rgba(74, 222, 128, 0.25);
+  box-shadow: 0 0 0 2.5px rgba(74, 222, 128, 0.08);
+  background: rgba(255, 255, 255, 0.055);
 }
 
-.aura-input-group input {
+.auth-input-icon {
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: color 0.3s ease;
+}
+
+.auth-input-wrap:focus-within .auth-input-icon {
+  color: var(--accent);
+}
+
+.auth-input-wrap input {
+  flex: 1;
+  height: 100%;
   background: transparent;
   border: none;
-  color: #fff;
-  margin-left: 12px;
-  width: 100%;
   outline: none;
-  font-size: 14.5px;
-  font-family: var(--font-sans);
-}
-
-.input-icon { color: var(--c-green-400); font-size: 16px; }
-
-.aura-login-btn {
-  width: 100%;
-  padding: 13px;
-  background: var(--c-green-400);
-  border: none;
-  border-radius: 14px;
-  color: #08100a;
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.3s var(--ease-out-expo);
-  font-family: var(--font-sans);
-  letter-spacing: 0.02em;
-  margin-top: 4px;
-}
-
-.aura-login-btn:hover {
-  box-shadow: 0 0 30px rgba(74, 222, 128, 0.4), 0 0 60px rgba(74, 222, 128, 0.2);
-  transform: translateY(-1px);
-}
-
-.aura-login-btn:active {
-  transform: scale(0.98);
-}
-
-.aura-login-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.aura-divider {
-  text-align: center;
-  color: var(--ink-tertiary);
-  margin: 24px 0;
-  font-size: 11.5px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.aura-divider::before,
-.aura-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.social-login {
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-}
-
-.social-btn {
-  border-radius: 14px;
-  width: 44px; height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.03);
   color: #fff;
+  font-size: 13.5px;
+  font-family: var(--font-sans);
+  margin-left: 9px;
+}
+
+.auth-input-wrap input::placeholder {
+  color: rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+}
+
+/* ── Primary Button ─────────────────────────────────────────────────────── */
+.auth-submit-btn {
+  width: 100%;
+  height: 46px;
+  margin-top: 6px;
+  border: none;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #4ADE80, #22C55E);
+  color: #050a07;
+  font-size: 14.5px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  letter-spacing: 0.3px;
   cursor: pointer;
-  display: flex;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Pulsing glow — makes the button feel alive */
+.auth-submit-btn::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 13px;
+  background: inherit;
+  filter: blur(14px);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.4s ease;
+}
+
+.auth-submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 30px rgba(74, 222, 128, 0.3), 0 0 60px rgba(74, 222, 128, 0.1);
+}
+
+.auth-submit-btn:hover::after {
+  opacity: 0.5;
+  animation: btnGlowPulse 2s ease-in-out infinite;
+}
+
+@keyframes btnGlowPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.auth-submit-btn:active {
+  transform: scale(0.985);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.auth-submit-btn:disabled::after {
+  display: none;
+}
+
+/* ── Loading ──────────────────────────────────────────────────────────────── */
+.auth-btn-loading {
+  display: inline-flex;
   align-items: center;
+  gap: 9px;
   justify-content: center;
-  font-size: 18px;
-  transition: all 0.3s var(--ease-out-expo);
 }
 
-.social-btn:hover {
-  border-color: rgba(74, 222, 128, 0.3);
-  background: rgba(74, 222, 128, 0.08);
-  box-shadow: 0 0 16px rgba(74, 222, 128, 0.15);
-  transform: translateY(-2px);
+.auth-spinner {
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(8, 16, 10, 0.25);
+  border-top-color: #08100a;
+  border-radius: 50%;
+  animation: authSpin 0.7s linear infinite;
 }
 
-.aura-footer {
+@keyframes authSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FOOTER — deeply secondary
+   ══════════════════════════════════════════════════════════════════════════ */
+.auth-footer {
   text-align: center;
-  margin-top: 24px;
-  font-size: 12.5px;
-  color: var(--ink-secondary);
+  margin-top: 18px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.2px;
 }
 
-.signup-link {
-  color: var(--c-green-400);
-  cursor: pointer;
+.auth-footer-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: rgba(74, 222, 128, 0.5);
   font-weight: 500;
-  transition: opacity 0.2s;
+  cursor: pointer;
+  transition: color 0.25s ease;
+  margin-left: 2px;
 }
 
-.signup-link:hover { opacity: 0.8; }
+.auth-footer-link:hover {
+  color: var(--accent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .auth-card {
+    margin: 0 14px;
+    padding: 28px 22px 24px;
+  }
+
+  .auth-title {
+    font-size: 24px;
+  }
+
+  .auth-center-glow {
+    width: 340px;
+    height: 340px;
+  }
+}

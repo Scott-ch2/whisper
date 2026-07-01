@@ -1,23 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Tooltip, Dropdown } from 'antd';
 import {
-  UserOutlined, SettingOutlined, LogoutOutlined,
-  DashboardOutlined, TeamOutlined, TranslationOutlined,
-  HistoryOutlined, RobotOutlined, BarChartOutlined,
-  ControlOutlined,
+  UserOutlined, LogoutOutlined,
+  DashboardOutlined, TeamOutlined, HistoryOutlined,
 } from '@ant-design/icons';
 import { clearToken } from '../../services/api';
 import './AdminLayout.css';
 
 const adminNav = [
-  { key: '/admin',              icon: <DashboardOutlined />,     label: 'Dashboard' },
-  { key: '/admin/users',        icon: <TeamOutlined />,          label: 'Users' },
-  { key: '/admin/monitor',      icon: <TranslationOutlined />,   label: 'Monitor' },
-  { key: '/admin/history',      icon: <HistoryOutlined />,       label: 'History' },
-  { key: '/admin/models',       icon: <RobotOutlined />,         label: 'Models' },
-  { key: '/admin/analytics',    icon: <BarChartOutlined />,      label: 'Analytics' },
-  { key: '/admin/settings',     icon: <ControlOutlined />,       label: 'Settings' },
+  { key: '/admin',              icon: <DashboardOutlined />,  label: 'Dashboard' },
+  { key: '/admin/users',        icon: <TeamOutlined />,       label: 'Users' },
+  { key: '/admin/records',      icon: <HistoryOutlined />,    label: 'Records' },
 ];
 
 export const AdminLayout: React.FC = () => {
@@ -26,19 +20,17 @@ export const AdminLayout: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const userMenuItems = useMemo(() => [
-    { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
+    { key: 'profile', icon: <UserOutlined />, label: 'Profile', onClick: () => navigate('/admin/profile') },
     { type: 'divider' as const },
     { key: 'logout', danger: true, icon: <LogoutOutlined />, label: 'Sign Out', onClick: () => { clearToken(); navigate('/login'); } },
   ], [navigate]);
 
   return (
     <div className="admin-workspace">
-      {/* Background — dimmer than user side */}
       <img className="fullscreen-bg-video" src="/forest.png" alt="" style={{ filter: 'brightness(0.55) saturate(0.6) contrast(1.1)' }} />
       <div className="volumetric-overlay" style={{ opacity: 0.4 }} />
       <div className="dark-vignette" style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.7) 100%)' }} />
 
-      {/* Left Sidebar */}
       <nav className="glass-card admin-sidebar fade-in-left">
         <div className="admin-logo" onClick={() => navigate('/admin')}>
           <span className="admin-logo-dot" /><span className="admin-logo-dot" /><span className="admin-logo-dot" />
@@ -70,7 +62,6 @@ export const AdminLayout: React.FC = () => {
         </div>
       </nav>
 
-      {/* Content */}
       <main className="admin-content">
         <Outlet />
       </main>

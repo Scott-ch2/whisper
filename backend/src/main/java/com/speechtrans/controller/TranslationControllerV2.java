@@ -8,6 +8,7 @@ import com.speechtrans.mapper.TranslationSegmentMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.speechtrans.service.InferenceClient;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,8 +31,9 @@ public class TranslationControllerV2 {
     private final InferenceClient inferenceClient;
     private final SimpMessagingTemplate messagingTemplate;
 
+    @Value("${app.audio.upload-dir:../data/uploads/audio/}")
+    private String uploadDirPath;
 
-   private static final String UPLOAD_DIR = "C:/Users/Lenovo/Desktop/whisper/data/uploads/audio/";
     /**
      * 上传音频并创建翻译任务
      *
@@ -47,8 +49,8 @@ public class TranslationControllerV2 {
             @RequestParam(value = "srcLang", defaultValue = "auto") String srcLang,
             @RequestParam("tgtLang") String tgtLang) throws IOException {
 
-        // 1. 保存音频文件
-        Path uploadDir = Paths.get(UPLOAD_DIR);
+        // 1. 保存音频文件（使用相对路径，相对于 user.dir）
+        Path uploadDir = Paths.get(uploadDirPath);
         if (!Files.exists(uploadDir)) {
             Files.createDirectories(uploadDir);
         }

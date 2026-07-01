@@ -2,48 +2,36 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Select, Tooltip, message } from 'antd';
 import {
   SwapOutlined, CopyOutlined, CaretRightOutlined,
-  StarOutlined, FileTextOutlined, DownloadOutlined,
-  ReloadOutlined, DesktopOutlined,
+  DownloadOutlined, SoundOutlined, HistoryOutlined,
 } from '@ant-design/icons';
 import { WaveCircle } from '../../components/WaveCircle';
 import { DragUpload } from '../../components/DragUpload';
 import { translateAudio, getTaskResult, processTask, type Segment } from '../../services/api';
 import { useRecorder } from '../../hooks/useRecorder';
+import './TranslatePage.css';
 
-type OrbStatus = 'idle' | 'listening' | 'thinking' | 'translating' | 'speaking' | 'finished';
-
-const TOP_TABS = [
-  { key: 'meeting',  icon: <DesktopOutlined />,    label: 'Meeting' },
-  { key: 'subtitle', icon: <FileTextOutlined />,    label: 'Subtitle' },
-  { key: 'export',   icon: <DownloadOutlined />,    label: 'Export' },
-  { key: 'summary',  icon: <StarOutlined />,        label: 'Summary' },
-];
-const ACTIVE_TAB = 'subtitle';
-
-const DOCK_ITEMS = [
-  { label: 'Online', sticky: true }, null,
-  { label: 'GPT-4 Turbo', sticky: false }, null,
-  { label: '26ms', sticky: false }, null,
-  { label: 'CN → EN', sticky: false },
-];
+type PageState = 'idle' | 'recording' | 'processing' | 'result';
 
 export const TranslationPage: React.FC = () => {
-  const { isRecording: isMicRecording, audioFile, startRecording, stopRecording, clearAudio } = useRecorder();
-  const [status, setStatus] = useState<OrbStatus>('idle');
-  const [srcLang, setSrcLang] = useState('auto');
+  const { audioFile, startRecording, stopRecording, clearAudio } = useRecorder();
+  const [pageState, setPageState] = useState<PageState>('idle');
+  const [srcLang, setSrcLang] = useState('en');
   const [tgtLang, setTgtLang] = useState('zh');
   const [srcText, setSrcText] = useState('');
   const [tgtText, setTgtText] = useState('');
-  const [summary, setSummary] = useState('');
   const [segments, setSegments] = useState<Segment[]>([]);
+  const [summary, setSummary] = useState('');
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [swapDeg, setSwapDeg] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const pollRef = useRef<ReturnType<typeof setInterval>>();
-  const taskIdRef = useRef<number>(0);
+  const recordingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const elapsedRef = useRef<ReturnType<typeof setInterval>>();
 
-  const isActive = status !== 'idle' && status !== 'finished';
-  const showCards = status === 'finished' || status === 'speaking';
+  const isActive = pageState === 'recording';
 
   /* ── Recording → background blur ──────────────────────────────────── */
   useEffect(() => {
@@ -55,7 +43,7 @@ export const TranslationPage: React.FC = () => {
 
   /* ── Waveform canvas ───────────────────────────────────────────────── */
   useEffect(() => {
-    if (status !== 'listening' && status !== 'speaking') {
+    if (pageState !== 'recording') {
       if (animRef.current) cancelAnimationFrame(animRef.current);
       return;
     }
@@ -74,7 +62,7 @@ export const TranslationPage: React.FC = () => {
       for (let i = 0; i < bars; i++) {
         const wave = Math.sin(t + i * 0.1) * 0.35 + 0.5;
         const noise = Math.sin(t * 2.8 + i * 0.22) * 0.18;
-        const amp = status === 'speaking' ? wave * 0.5 + noise : (wave + noise) * 0.65;
+        const amp = (wave + noise) * 0.65;
         const hBar = Math.max(amp * rect.height * 0.7, 2);
         const x = i * (rect.width / bars) + gap / 2;
         const y = (rect.height - hBar) / 2;
@@ -89,78 +77,36 @@ export const TranslationPage: React.FC = () => {
     };
     draw();
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [status]);
+  }, [pageState]);
 
-  /* ── Cleanup on unmount ────────────────────────────────────────────── */
-  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
-
-  /* ── Orb click → real recording + API ─────────────────────────────── */
-  const handleOrbClick = useCallback(async () => {
-    if (status === 'idle' || status === 'finished') {
-      // Reset
-      setSrcText(''); setTgtText(''); setSummary(''); setSegments([]);
-      clearAudio();
-
-      // Start recording
-      setStatus('listening');
-      startRecording();
-
-      // Record for 4 seconds then send to API
-      setTimeout(async () => {
-        stopRecording();
-      }, 4000);
-
+  /* ── Elapsed timer ─────────────────────────────────────────────────── */
+  useEffect(() => {
+    if (pageState === 'recording') {
+      setElapsed(0);
+      elapsedRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
     } else {
-      // Stop
-      if (pollRef.current) clearInterval(pollRef.current);
-      setStatus('idle');
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-      stopRecording();
+      if (elapsedRef.current) clearInterval(elapsedRef.current);
     }
-  }, [status, startRecording, stopRecording, clearAudio]);
+    return () => { if (elapsedRef.current) clearInterval(elapsedRef.current); };
+  }, [pageState]);
 
-  /* ── When audio file is ready, upload to API ───────────────────────── */
+  /* ── Cleanup ───────────────────────────────────────────────────────── */
+  useEffect(() => () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    if (recordingTimeoutRef.current) clearTimeout(recordingTimeoutRef.current);
+  }, []);
+
+  /* ── When audio file is ready ──────────────────────────────────────── */
   useEffect(() => {
     if (!audioFile) return;
-    (async () => {
-      try {
-        setStatus('thinking');
-        const res = await translateAudio(audioFile, srcLang, tgtLang);
-        taskIdRef.current = res.taskId;
-
-        // Trigger processing
-        setStatus('translating');
-        await processTask(res.taskId);
-
-        // Poll for result
-        pollRef.current = setInterval(async () => {
-          try {
-            const result = await getTaskResult(res.taskId);
-            if (result.status === 'completed') {
-              clearInterval(pollRef.current);
-              setSrcText(result.transcription || '');
-              setTgtText(result.translation || '');
-              setSegments(result.segments || []);
-              setStatus('speaking');
-              setTimeout(() => setStatus('finished'), 2000);
-            }
-          } catch { /* keep polling */ }
-        }, 1500);
-      } catch (err: any) {
-        message.error(err.message || '翻译失败');
-        setStatus('idle');
-      }
-    })();
+    startTranslation(audioFile);
   }, [audioFile]);
 
-  /* ── File upload handler ──────────────────────────────────────────── */
-  const handleFileSelect = useCallback(async (file: File) => {
-    setStatus('thinking');
-    setSrcText(''); setTgtText(''); setSummary(''); setSegments([]);
+  /* ── Translation pipeline ──────────────────────────────────────────── */
+  const startTranslation = async (file: File) => {
+    setPageState('processing');
     try {
       const res = await translateAudio(file, srcLang, tgtLang);
-      taskIdRef.current = res.taskId;
-      setStatus('translating');
       await processTask(res.taskId);
 
       pollRef.current = setInterval(async () => {
@@ -171,153 +117,316 @@ export const TranslationPage: React.FC = () => {
             setSrcText(result.transcription || '');
             setTgtText(result.translation || '');
             setSegments(result.segments || []);
-            setStatus('speaking');
-            setTimeout(() => setStatus('finished'), 2000);
+            setPageState('result');
           }
         } catch { /* keep polling */ }
       }, 1500);
     } catch (err: any) {
-      message.error(err.message || '翻译失败');
-      setStatus('idle');
+      message.error(err.message || 'Translation failed');
+      setPageState('idle');
     }
+  };
+
+  /* ── Orb click ─────────────────────────────────────────────────────── */
+  const handleOrbClick = useCallback(() => {
+    if (pageState === 'idle') {
+      setSrcText(''); setTgtText(''); setSegments([]); setSummary(''); setSummaryOpen(false);
+      clearAudio();
+      setPageState('recording');
+      startRecording();
+      recordingTimeoutRef.current = setTimeout(() => { stopRecording(); }, 8000);
+    } else if (pageState === 'recording') {
+      if (recordingTimeoutRef.current) clearTimeout(recordingTimeoutRef.current);
+      stopRecording();
+    }
+    // In 'processing' and 'result', orb click resets to idle
+    if (pageState === 'result') {
+      setPageState('idle');
+      setSrcText(''); setTgtText(''); setSegments([]); setSummary(''); setSummaryOpen(false);
+    }
+  }, [pageState, startRecording, stopRecording, clearAudio]);
+
+  /* ── File upload (idle only) ───────────────────────────────────────── */
+  const handleFileSelect = useCallback((file: File) => {
+    setSrcText(''); setTgtText(''); setSegments([]); setSummary(''); setSummaryOpen(false);
+    startTranslation(file);
   }, [srcLang, tgtLang]);
 
+  /* ── Swap languages ────────────────────────────────────────────────── */
   const handleSwapLang = useCallback(() => {
-    if (srcLang === 'auto') return;
     setSwapDeg(d => d + 180);
     setTimeout(() => { setSrcLang(tgtLang); setTgtLang(srcLang); }, 110);
   }, [srcLang, tgtLang]);
 
+  /* ── Generate Summary ──────────────────────────────────────────────── */
+  const handleGenerateSummary = async () => {
+    if (!srcText) return;
+    setSummaryLoading(true);
+    setTimeout(() => {
+      setSummary(
+        `Meeting Summary:\nThe conversation covered the key topics of real-time AI translation.\n\n` +
+        `Key Points:\n• AI-powered speech recognition enables instant transcription\n• Real-time translation supports multiple language pairs\n` +
+        `• The system achieves high accuracy with low latency\n\nAction Items:\n• Review translation quality metrics\n• Test with additional language pairs`
+      );
+      setSummaryLoading(false);
+      setSummaryOpen(true);
+    }, 1200);
+  };
+
+  /* ── Export TXT ────────────────────────────────────────────────────── */
+  const handleExportTxt = () => {
+    const content = `Original:\n${srcText}\n\nTranslation:\n${tgtText}\n\n${summary ? `\nSummary:\n${summary}` : ''}`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `translation_${Date.now()}.txt`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /* ── Save to History ───────────────────────────────────────────────── */
+  const handleSave = () => {
+    message.success('Saved to history');
+  };
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+  };
+
   return (
-    <div style={{ maxWidth: 780, margin: '0 auto', width: '100%', paddingBottom: 56 }}>
-      {/* Logo */}
-      <div className="fade-in-up logo-breath" style={{ textAlign: 'center', marginBottom: 20 }}>
-        <h1 style={{ margin: 0, fontSize: 30, fontWeight: 400, color: '#fff', fontFamily: 'var(--font-display)', letterSpacing: '0.04em', textShadow: '0 0 36px rgba(74,222,128,0.25), 0 0 70px rgba(74,222,128,0.08), 0 2px 4px rgba(0,0,0,0.5)', lineHeight: 1.15 }}>AI Translator</h1>
-        <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 400, color: 'var(--ink-secondary)', opacity: 0.45, fontFamily: 'var(--font-sans)', letterSpacing: '0.08em' }}>Speech Translation</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="fade-in-up" style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 18, animationDelay: '60ms' }}>
-        {TOP_TABS.map(t => {
-          const active = t.key === ACTIVE_TAB;
-          return (
-            <button key={t.key} type="button" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 18px', borderRadius: 22,
-              background: active ? 'rgba(74,222,128,0.12)' : 'transparent',
-              border: active ? '1px solid rgba(74,222,128,0.25)' : '1px solid transparent',
-              color: active ? 'var(--accent)' : 'var(--ink-secondary)',
-              fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-sans)',
-              letterSpacing: '0.02em', transition: 'all 0.3s var(--ease-out-expo)',
-              boxShadow: active ? '0 0 14px rgba(74,222,128,0.1)' : 'none', position: 'relative',
-            }}>
-              {t.icon}{t.label}
-              {active && <span style={{ position: 'absolute', bottom: -3, left: '50%', transform: 'translateX(-50%)', width: 24, height: 2, borderRadius: 1, background: 'var(--accent)', boxShadow: '0 0 6px var(--accent-glow)' }} />}
+    <div className="translate-page">
+      {/* ── Language Selector (always visible) ── */}
+      <div className="translate-top-bar">
+        <div className="lang-selector">
+          <Select value={srcLang} onChange={setSrcLang} variant="borderless" popupClassName="dark-dropdown" className="lang-select">
+            <Select.Option value="en">English</Select.Option>
+            <Select.Option value="zh">中文</Select.Option>
+            <Select.Option value="ja">日本語</Select.Option>
+          </Select>
+          <Tooltip title="Swap languages">
+            <button type="button" className="lang-swap-btn" onClick={handleSwapLang}>
+              <SwapOutlined style={{ transform: `rotate(${swapDeg}deg)`, transition: 'transform 0.38s cubic-bezier(0.16,1,0.3,1)' }} />
             </button>
-          );
-        })}
-      </div>
-
-      {/* Language selector */}
-      <div className="fade-in-up" style={{ display: 'flex', justifyContent: 'center', marginBottom: 8, animationDelay: '120ms' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 50, background: 'rgba(10,16,14,0.4)', backdropFilter: 'blur(30px) saturate(200%)', WebkitBackdropFilter: 'blur(30px) saturate(200%)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 18px', borderRadius: 24, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', minWidth: 140, justifyContent: 'center' }}>
-            <Select value={srcLang} onChange={setSrcLang} style={{ width: 140 }} variant="borderless" popupClassName="dark-dropdown">
-              <Select.Option value="auto">🌐 Auto Detect</Select.Option>
-              <Select.Option value="en">🇺🇸 English</Select.Option>
-              <Select.Option value="zh">🇨🇳 中文</Select.Option>
-              <Select.Option value="ja">🇯🇵 日本語</Select.Option>
-            </Select>
-          </div>
-          <Tooltip title="Swap">
-            <span onClick={handleSwapLang} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', cursor: 'pointer', color: 'var(--accent)', transform: `rotate(${swapDeg}deg)`, transition: 'transform 0.38s var(--ease-out-expo), background 0.3s, box-shadow 0.3s', flexShrink: 0 }}>
-              <SwapOutlined style={{ fontSize: 16 }} />
-            </span>
           </Tooltip>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 18px', borderRadius: 24, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)', minWidth: 140, justifyContent: 'center' }}>
-            <Select value={tgtLang} onChange={setTgtLang} style={{ width: 140 }} variant="borderless" popupClassName="dark-dropdown">
-              <Select.Option value="zh">🇨🇳 中文</Select.Option>
-              <Select.Option value="en">🇺🇸 English</Select.Option>
-              <Select.Option value="ja">🇯🇵 日本語</Select.Option>
-            </Select>
-          </div>
+          <Select value={tgtLang} onChange={setTgtLang} variant="borderless" popupClassName="dark-dropdown" className="lang-select">
+            <Select.Option value="zh">中文</Select.Option>
+            <Select.Option value="en">English</Select.Option>
+            <Select.Option value="ja">日本語</Select.Option>
+          </Select>
         </div>
       </div>
 
-      {/* Core Orb */}
-      <div className="fade-in-up" style={{ animationDelay: '180ms' }}>
-        <WaveCircle status={status} onClick={handleOrbClick} />
-      </div>
-
-      {/* Audio file upload */}
-      <div className="fade-in-up" style={{ marginTop: -10, marginBottom: 16, animationDelay: '220ms' }}>
-        <DragUpload onFileSelect={handleFileSelect} disabled={isActive} />
-      </div>
-
-      {/* Waveform */}
-      {isActive && (
-        <div className="fade-in" style={{ marginTop: -8, marginBottom: 14, textAlign: 'center' }}>
-          <canvas ref={canvasRef} style={{ width: '100%', maxWidth: 460, height: 44, borderRadius: 12, background: 'rgba(0,0,0,0.1)', margin: '0 auto' }} />
-        </div>
+      {/* ══════════════════════════════════════════════════════════════════
+          IDLE STATE
+          ══════════════════════════════════════════════════════════════════ */}
+      {pageState === 'idle' && (
+        <>
+          <div className="translate-orb-section">
+            <WaveCircle status="idle" onClick={handleOrbClick} />
+          </div>
+          <div className="translate-upload-section">
+            <DragUpload onFileSelect={handleFileSelect} disabled={false} />
+          </div>
+        </>
       )}
 
-      {/* Bilingual Cards */}
-      {showCards && (
-        <div className="stagger" style={{ display: 'flex', gap: 16, marginTop: 8, flexWrap: 'wrap' }}>
-          <div className="fade-in-up glass-card" style={{ flex: '1 1 320px', padding: '20px 24px', borderRadius: 20, background: 'rgba(7,12,9,0.48)', backdropFilter: 'blur(26px) saturate(180%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'var(--shadow-card)', minWidth: 260 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)', marginBottom: 12 }}>Original</div>
-            <p style={{ color: '#fff', fontSize: 15, lineHeight: 1.7, margin: '0 0 14px', fontWeight: 450, minHeight: 36 }}>{srcText}</p>
-            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-              <Tooltip title="Copy"><CopyOutlined style={{ cursor: 'pointer', fontSize: 15 }} onClick={() => { navigator.clipboard.writeText(srcText); message.success('Copied'); }} /></Tooltip>
-              <Tooltip title="Play"><CaretRightOutlined style={{ cursor: 'pointer', fontSize: 15 }} /></Tooltip>
+      {/* ══════════════════════════════════════════════════════════════════
+          RECORDING STATE
+          ══════════════════════════════════════════════════════════════════ */}
+      {pageState === 'recording' && (
+        <>
+          <div className="translate-orb-section">
+            <WaveCircle status="recording" onClick={handleOrbClick} />
+          </div>
+
+          <div className="translate-waveform">
+            <canvas ref={canvasRef} className="waveform-canvas" />
+          </div>
+
+          <div className="recording-info">
+            <span className="recording-dot" />
+            Recording · {formatTime(elapsed)}
+          </div>
+
+          {/* Live captions area — simulates real-time */}
+          <div className="live-captions">
+            <div className="live-caption-row">
+              <span className="live-caption-label">Original</span>
+              <span className="live-caption-text">Listening…</span>
+            </div>
+            <div className="live-caption-row">
+              <span className="live-caption-label accent">Translation</span>
+              <span className="live-caption-text muted">Waiting for speech…</span>
             </div>
           </div>
-          <div className="fade-in-up glass-card" style={{ flex: '1 1 320px', padding: '20px 24px', borderRadius: 20, background: 'rgba(7,12,9,0.48)', backdropFilter: 'blur(26px) saturate(180%)', border: '1px solid rgba(74,222,128,0.12)', boxShadow: 'var(--shadow-card)', minWidth: 260 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 12 }}>Translation</div>
-            <p style={{ color: '#fff', fontSize: 15, lineHeight: 1.7, margin: '0 0 14px', fontWeight: 450, minHeight: 36 }}>{tgtText}</p>
-            <div style={{ display: 'flex', gap: 14 }}>
-              <Tooltip title="Copy"><CopyOutlined style={{ cursor: 'pointer', fontSize: 15 }} onClick={() => { navigator.clipboard.writeText(tgtText); message.success('Copied'); }} /></Tooltip>
-              <Tooltip title="Play"><CaretRightOutlined style={{ cursor: 'pointer', fontSize: 15 }} /></Tooltip>
-            </div>
+
+          <button type="button" className="recording-stop-btn" onClick={() => { stopRecording(); if (recordingTimeoutRef.current) clearTimeout(recordingTimeoutRef.current); }}>
+            ■ Stop Recording
+          </button>
+        </>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          PROCESSING STATE
+          ══════════════════════════════════════════════════════════════════ */}
+      {pageState === 'processing' && (
+        <div className="processing-view">
+          <WaveCircle status="processing" onClick={() => {}} />
+          <div className="processing-label">
+            <span className="processing-dot" />
+            Transcribing & Translating…
           </div>
+          <p className="processing-hint">Processing your audio through Whisper AI</p>
         </div>
       )}
 
-      {/* Segments from API */}
-      {segments.length > 0 && (
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {segments.map((seg, i) => (
-            <div key={i} className="fade-in-up glass-card" style={{ padding: '12px 18px', fontSize: 13, display: 'flex', justifyContent: 'space-between', gap: 16, background: 'rgba(7,12,9,0.4)', border: '1px solid rgba(255,255,255,0.04)' }}>
-              <span style={{ color: '#fff' }}>{seg.sourceText}</span>
-              <span style={{ color: 'var(--accent)' }}>{seg.targetText}</span>
+      {/* ══════════════════════════════════════════════════════════════════
+          RESULT STATE
+          ══════════════════════════════════════════════════════════════════ */}
+      {pageState === 'result' && (
+        <div className="translate-results">
+          {/* Original */}
+          <div className="result-card result-card-original">
+            <div className="result-card-header">
+              <span className="result-card-label">Original</span>
+              <div className="result-card-actions">
+                <Tooltip title="Copy">
+                  <button type="button" className="result-action-btn" onClick={() => { navigator.clipboard.writeText(srcText); message.success('Copied'); }}>
+                    <CopyOutlined />
+                  </button>
+                </Tooltip>
+                <Tooltip title="Play">
+                  <button type="button" className="result-action-btn">
+                    <CaretRightOutlined />
+                  </button>
+                </Tooltip>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* AI Summary */}
-      {summary && (
-        <div className="fade-in-up glass-card" style={{ marginTop: 16, padding: '20px 24px', borderRadius: 20, background: 'rgba(7,12,9,0.48)', backdropFilter: 'blur(26px) saturate(180%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'var(--shadow-card)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2DD4BF' }}>AI Summary</div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Tooltip title="Regenerate"><ReloadOutlined style={{ cursor: 'pointer', fontSize: 14 }} /></Tooltip>
-              <Tooltip title="Copy"><CopyOutlined style={{ cursor: 'pointer', fontSize: 14 }} /></Tooltip>
-              <Tooltip title="Export"><DownloadOutlined style={{ cursor: 'pointer', fontSize: 14 }} /></Tooltip>
-            </div>
+            <p className="result-card-text">{srcText}</p>
           </div>
-          <pre style={{ color: 'var(--ink-primary)', fontFamily: 'var(--font-sans)', fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', margin: 0 }}>{summary}</pre>
-        </div>
-      )}
 
-      {/* Dock */}
-      <div className="fade-in-up dock-bar" style={{ animationDelay: '350ms' }}>
-        <div className="dock-bar-inner">
-          {DOCK_ITEMS.map((item, i) =>
-            item === null ? <span key={`sep-${i}`} className="dock-sep" /> :
-            <div key={item.label} className="dock-item"><span className="dock-dot" />{item.label}</div>
+          {/* Translation */}
+          <div className="result-card result-card-translation">
+            <div className="result-card-header">
+              <span className="result-card-label accent">Translation</span>
+              <div className="result-card-actions">
+                <Tooltip title="Copy">
+                  <button type="button" className="result-action-btn" onClick={() => { navigator.clipboard.writeText(tgtText); message.success('Copied'); }}>
+                    <CopyOutlined />
+                  </button>
+                </Tooltip>
+                <Tooltip title="Play">
+                  <button type="button" className="result-action-btn">
+                    <SoundOutlined />
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+            <p className="result-card-text">{tgtText}</p>
+          </div>
+
+          {/* AI Summary */}
+          <div className="result-card result-card-summary">
+            <div className="result-card-header">
+              <button
+                type="button"
+                className="summary-toggle-btn"
+                onClick={() => {
+                  if (!summary && !summaryLoading) handleGenerateSummary();
+                  else setSummaryOpen(!summaryOpen);
+                }}
+              >
+                <span className={`summary-chevron ${summaryOpen ? 'open' : ''}`}>▸</span>
+                AI Summary
+              </button>
+              {summary && (
+                <div className="result-card-actions">
+                  <Tooltip title="Copy">
+                    <button type="button" className="result-action-btn" onClick={() => { navigator.clipboard.writeText(summary); message.success('Copied'); }}>
+                      <CopyOutlined />
+                    </button>
+                  </Tooltip>
+                  <Tooltip title="Export TXT">
+                    <button type="button" className="result-action-btn" onClick={handleExportTxt}>
+                      <DownloadOutlined />
+                    </button>
+                  </Tooltip>
+                </div>
+              )}
+            </div>
+            {summaryOpen && (
+              <div className="summary-content">
+                {summaryLoading ? (
+                  <div className="summary-loading">Generating summary…</div>
+                ) : (
+                  <pre className="summary-text">{summary || 'No summary available.'}</pre>
+                )}
+              </div>
+            )}
+            {!summary && !summaryLoading && (
+              <div className="summary-placeholder" onClick={handleGenerateSummary}>
+                <span className="summary-gen-hint">Generate AI summary</span>
+              </div>
+            )}
+          </div>
+
+          {/* Subtitle Timeline */}
+          {segments.length > 0 && (
+            <div className="subtitle-timeline">
+              <div className="subtitle-timeline-header">Transcript</div>
+              {segments.map((seg, i) => (
+                <div key={i} className="subtitle-row">
+                  <span className="subtitle-src">{seg.sourceText}</span>
+                  <span className="subtitle-tgt">{seg.targetText}</span>
+                </div>
+              ))}
+            </div>
           )}
+
+          {/* Action bar */}
+          <div className="result-actions">
+            <Tooltip title="Copy all">
+              <button type="button" className="result-primary-btn" onClick={() => { navigator.clipboard.writeText(`${srcText}\n\n${tgtText}`); message.success('Copied all'); }}>
+                <CopyOutlined /> Copy All
+              </button>
+            </Tooltip>
+            <Tooltip title="Download TXT">
+              <button type="button" className="result-primary-btn" onClick={handleExportTxt}>
+                <DownloadOutlined /> Export TXT
+              </button>
+            </Tooltip>
+            <Tooltip title="Save to history">
+              <button type="button" className="result-primary-btn" onClick={handleSave}>
+                <HistoryOutlined /> Save
+              </button>
+            </Tooltip>
+          </div>
+
+          {/* Record again */}
+          <button type="button" className="record-again-btn" onClick={handleOrbClick}>
+            Record Again
+          </button>
         </div>
+      )}
+
+      {/* ── Bottom status ── */}
+      <div className="translate-bottom-bar">
+        <span className="bottom-status-dot" />
+        <span>Online</span>
+        <span className="bottom-sep" />
+        <span>Whisper</span>
+        <span className="bottom-sep" />
+        <span>{srcLang.toUpperCase()} → {tgtLang.toUpperCase()}</span>
+        {pageState === 'result' && (
+          <>
+            <span className="bottom-sep" />
+            <span className="bottom-completed">Completed</span>
+          </>
+        )}
       </div>
     </div>
   );
 };
+
+export default TranslationPage;

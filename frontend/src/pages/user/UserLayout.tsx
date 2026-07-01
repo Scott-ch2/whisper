@@ -1,18 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Tooltip, Dropdown } from 'antd';
 import {
-  UserOutlined, SettingOutlined, LogoutOutlined,
-  DownOutlined, SwapOutlined,
-  AudioOutlined, FileTextOutlined, GlobalOutlined,
-  HistoryOutlined, CloudDownloadOutlined,
-  ClockCircleOutlined, CheckCircleOutlined, TranslationOutlined,
-  ThunderboltOutlined, RightOutlined, FileOutlined,
+  UserOutlined, LogoutOutlined,
+  AudioOutlined, HistoryOutlined,
 } from '@ant-design/icons';
-import { fetchHistory, clearToken } from '../../services/api';
+import { clearToken } from '../../services/api';
 import './UserLayout.css';
 
-/* ── Particles ──────────────────────────────────────────────────────────── */
+/* ── Forest Particles ────────────────────────────────────────────────────── */
 const FOREST_PARTICLES = Array.from({ length: 32 }, (_, i) => {
   const isFirefly = i < 12;
   return {
@@ -23,6 +19,7 @@ const FOREST_PARTICLES = Array.from({ length: 32 }, (_, i) => {
     size: isFirefly ? `${2 + Math.random() * 3}px` : `${1.2 + Math.random() * 2}px`,
   };
 });
+
 const ForestParticles: React.FC = React.memo(() => (
   <div className="forest-particles" aria-hidden="true">
     {FOREST_PARTICLES.map(p => (
@@ -32,33 +29,20 @@ const ForestParticles: React.FC = React.memo(() => (
   </div>
 ));
 
-/* ═════════════════════════════════════════════════════════════════════════════
-   USER LAYOUT
-   ═════════════════════════════════════════════════════════════════════════════ */
 export const UserLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [recents, setRecents] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetchHistory(1, 4).then(p => setRecents(p.records)).catch(() => {});
-  }, []);
 
   const userMenuItems = useMemo(() => [
-    { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
+    { key: 'profile', icon: <UserOutlined />, label: 'Profile', onClick: () => navigate('/app/profile') },
     { type: 'divider' as const },
     { key: 'logout', danger: true, icon: <LogoutOutlined />, label: 'Sign Out', onClick: () => { clearToken(); navigate('/login'); } },
   ], [navigate]);
 
   const navItems = useMemo(() => [
-    { key: '/app',         icon: <AudioOutlined />,          label: 'Translate' },
-    { key: '/app/file',    icon: <FileTextOutlined />,       label: 'Document' },
-    { key: '/app/web',     icon: <GlobalOutlined />,         label: 'Browser' },
-    { key: '/app/ai',      icon: <ThunderboltOutlined />,    label: 'Assistant' },
-    { key: '/app/history', icon: <HistoryOutlined />,        label: 'History' },
-    { key: '/app/offline', icon: <CloudDownloadOutlined />,  label: 'Offline' },
+    { key: '/app',         icon: <AudioOutlined />,    label: 'Translate' },
+    { key: '/app/history', icon: <HistoryOutlined />,  label: 'History' },
   ], []);
 
   return (
@@ -87,12 +71,6 @@ export const UserLayout: React.FC = () => {
           </div>
         </div>
         <div className="sidebar-bottom">
-          <Tooltip title="Settings" placement="right" color="rgba(7,12,9,0.94)">
-            <div className={`nav-item ${isActive('/app/settings') ? 'active' : ''}`}>
-              <span className="nav-icon-wrap"><SettingOutlined /></span>
-              <span className="nav-label">Settings</span>
-            </div>
-          </Tooltip>
           <Dropdown menu={{ theme: 'dark', items: userMenuItems }} placement="rightBottom" trigger={['click']}>
             <div className="user-avatar"><UserOutlined /></div>
           </Dropdown>
@@ -102,56 +80,6 @@ export const UserLayout: React.FC = () => {
       <main className="main-content">
         <Outlet />
       </main>
-
-      <aside className="right-panel fade-in-up">
-        <div className="panel-section">
-          <div className="panel-title">Recent</div>
-          {recents.length > 0 ? recents.map((r: any) => (
-            <div key={r.id} className="recent-item" onClick={() => navigate('/app')}>
-              <div className="recent-main">
-                <span className="recent-src">{r.transcription?.slice(0, 20) || '...'}</span>
-                <SwapOutlined style={{ fontSize: 9, color: 'var(--ink-tertiary)', flexShrink: 0 }} />
-                <span className="recent-tgt">{r.translation?.slice(0, 20) || '...'}</span>
-              </div>
-              <div className="recent-time">{r.createdAt?.slice(11, 16) || ''}</div>
-              <span className="recent-arrow"><RightOutlined /></span>
-            </div>
-          )) : (
-            <div style={{ fontSize: 12, color: 'var(--ink-tertiary)', padding: 8 }}>No translations yet</div>
-          )}
-        </div>
-
-        <div className="panel-section">
-          <div className="panel-title">Current Session</div>
-          <div className="session-card">
-            <div className="session-stat">
-              <div className="session-stat-icon"><TranslationOutlined /></div>
-              <div className="session-stat-body"><div className="session-stat-label">Language Pair</div><div className="session-stat-value">CN ↔ EN</div></div>
-            </div>
-            <div className="session-stat">
-              <div className="session-stat-icon"><ClockCircleOutlined /></div>
-              <div className="session-stat-body"><div className="session-stat-label">Duration</div><div className="session-stat-value">--</div></div>
-            </div>
-            <div className="session-stat">
-              <div className="session-stat-icon"><CheckCircleOutlined /></div>
-              <div className="session-stat-body"><div className="session-stat-label">Accuracy</div><div className="session-stat-value">--</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="panel-section panel-shortcuts">
-          <div className="panel-title shortcuts-header" onClick={() => setShortcutsOpen(!shortcutsOpen)}>
-            <span>Shortcuts</span>
-            <DownOutlined className={`shortcuts-chevron ${shortcutsOpen ? 'open' : ''}`} />
-          </div>
-          <div className={`shortcuts-body ${shortcutsOpen ? 'open' : ''}`}>
-            <div className="kbd-row"><kbd>Space</kbd> Start Recording</div>
-            <div className="kbd-row"><kbd>⌘T</kbd> Translate</div>
-            <div className="kbd-row"><kbd>⌘H</kbd> History</div>
-            <div className="kbd-row"><kbd>⌘E</kbd> Export</div>
-          </div>
-        </div>
-      </aside>
     </div>
   );
 };

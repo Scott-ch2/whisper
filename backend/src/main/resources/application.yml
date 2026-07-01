@@ -33,6 +33,13 @@ jwt:
 server:
   port: 8088
 
+# 文件上传目录配置（相对路径，相对于 user.dir/backend）
+app:
+  upload:
+    dir: ./uploads/
+  audio:
+    upload-dir: ../data/uploads/audio/
+
 # Knife4j
 springdoc:
   swagger-ui:

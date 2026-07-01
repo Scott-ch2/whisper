@@ -11,6 +11,7 @@ export function setToken(token: string) {
 }
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem('whisper_user');
 }
 
 // ── Shared fetch wrapper ───────────────────────────────────────────────
@@ -53,6 +54,8 @@ export interface LoginData {
   token: string;
   username: string;
   role: string;
+  email: string;
+  avatar: string;
 }
 export interface UserInfo {
   id: number;
@@ -63,13 +66,28 @@ export interface UserInfo {
   createdAt: string;
 }
 
-export async function login(username: string, password: string): Promise<LoginData> {
-  const data = await request<LoginData>('/auth/login', {
+export interface ProfileData {
+  id: number;
+  username: string;
+  email: string;
+  avatar: string;
+}
+
+export function login(username: string, password: string): Promise<LoginData> {
+  return request<LoginData>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
+  }).then(data => {
+    setToken(data.token);
+    // Store full user info for session recovery
+    localStorage.setItem('whisper_user', JSON.stringify({
+      username: data.username,
+      role: data.role,
+      email: data.email,
+      avatar: data.avatar,
+    }));
+    return data;
   });
-  setToken(data.token);
-  return data;
 }
 
 export async function register(username: string, password: string, email: string): Promise<string> {
@@ -81,6 +99,40 @@ export async function register(username: string, password: string, email: string
 
 export async function getUserInfo(): Promise<UserInfo> {
   return request<UserInfo>('/auth/info');
+}
+
+export async function fetchProfile(): Promise<ProfileData> {
+  return request<ProfileData>('/user/profile');
+}
+
+export async function updateProfile(data: { username: string; email: string; avatar: string }): Promise<ProfileData> {
+  return request<ProfileData>('/user/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updatePassword(data: { oldPassword: string; newPassword: string }): Promise<string> {
+  return request<string>('/user/password', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function uploadAvatar(file: File): Promise<{ url: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  const token = getToken();
+  const res = await fetch(`${API_BASE}/upload/avatar`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  const text = await res.text();
+  if (!text) throw new Error('Upload failed');
+  const json = JSON.parse(text);
+  const data = json.data || json;
+  return { url: data.url };
 }
 
 // ── Translation ────────────────────────────────────────────────────────
@@ -231,4 +283,16 @@ export async function fetchSettings() {
 
 export async function updateSettings(body: any) {
   return request<string>('/admin/settings', { method: 'PUT', body: JSON.stringify(body) });
+}
+
+export async function freezeUser(id: number): Promise<string> {
+  return request<string>(`/admin/users/${id}/freeze`, { method: 'PUT' });
+}
+
+export async function unfreezeUser(id: number): Promise<string> {
+  return request<string>(`/admin/users/${id}/unfreeze`, { method: 'PUT' });
+}
+
+export async function deleteAdminUser(id: number): Promise<string> {
+  return request<string>(`/admin/users/${id}`, { method: 'DELETE' });
 }

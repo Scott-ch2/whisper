@@ -71,15 +71,35 @@ public class AdminUsersController {
         return Result.success(data);
     }
 
-    @PutMapping("/users/{id}/status")
-    public Result<String> toggleUserStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
+    @PutMapping("/users/{id}/freeze")
+    public Result<String> freezeUser(@PathVariable Long id) {
         User user = userMapper.selectById(id);
         if (user == null) {
             return Result.error(404, "用户不存在");
         }
-        Integer status = body.get("status");
-        user.setStatus(status != null ? status : (user.getStatus() == 1 ? 0 : 1));
+        user.setStatus(2);
         userMapper.updateById(user);
-        return Result.success("状态更新成功");
+        return Result.success("用户已冻结");
+    }
+
+    @PutMapping("/users/{id}/unfreeze")
+    public Result<String> unfreezeUser(@PathVariable Long id) {
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            return Result.error(404, "用户不存在");
+        }
+        user.setStatus(1);
+        userMapper.updateById(user);
+        return Result.success("用户已解冻");
+    }
+
+    @DeleteMapping("/users/{id}")
+    public Result<String> deleteUser(@PathVariable Long id) {
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            return Result.error(404, "用户不存在");
+        }
+        userMapper.deleteById(id);
+        return Result.success("用户已删除");
     }
 }
