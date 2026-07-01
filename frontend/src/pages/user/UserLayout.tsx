@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Tooltip, Dropdown } from 'antd';
 import {
@@ -7,10 +7,9 @@ import {
   AudioOutlined, FileTextOutlined, GlobalOutlined,
   HistoryOutlined, CloudDownloadOutlined,
   ClockCircleOutlined, CheckCircleOutlined, TranslationOutlined,
-  ThunderboltOutlined,
-  RightOutlined,
-  FileOutlined,
+  ThunderboltOutlined, RightOutlined, FileOutlined,
 } from '@ant-design/icons';
+import { fetchHistory, clearToken } from '../../services/api';
 import './UserLayout.css';
 
 /* ── Particles ──────────────────────────────────────────────────────────── */
@@ -33,20 +32,6 @@ const ForestParticles: React.FC = React.memo(() => (
   </div>
 ));
 
-/* ── Data ────────────────────────────────────────────────────────────────── */
-interface RecentItem { id: number; src: string; tgt: string; time: string; }
-const fakeRecents: RecentItem[] = [
-  { id: 1, src: 'Hello, how are you?', tgt: '你好，你怎么样？', time: '2m ago' },
-  { id: 2, src: 'Good morning everyone', tgt: '大家早上好', time: '15m ago' },
-  { id: 3, src: 'Thank you very much', tgt: '非常感谢', time: '1h ago' },
-  { id: 4, src: 'See you tomorrow', tgt: '明天见', time: '2h ago' },
-];
-const recentFiles = [
-  { name: 'Meeting.mp3', size: '12.4 MB', time: 'Today' },
-  { name: 'Interview.wav', size: '34.1 MB', time: 'Yesterday' },
-  { name: 'Podcast.mp3', size: '8.7 MB', time: '2d ago' },
-];
-
 /* ═════════════════════════════════════════════════════════════════════════════
    USER LAYOUT
    ═════════════════════════════════════════════════════════════════════════════ */
@@ -55,11 +40,16 @@ export const UserLayout: React.FC = () => {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [recents, setRecents] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchHistory(1, 4).then(p => setRecents(p.records)).catch(() => {});
+  }, []);
 
   const userMenuItems = useMemo(() => [
     { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
     { type: 'divider' as const },
-    { key: 'logout', danger: true, icon: <LogoutOutlined />, label: 'Sign Out', onClick: () => navigate('/login') },
+    { key: 'logout', danger: true, icon: <LogoutOutlined />, label: 'Sign Out', onClick: () => { clearToken(); navigate('/login'); } },
   ], [navigate]);
 
   const navItems = useMemo(() => [
@@ -73,7 +63,6 @@ export const UserLayout: React.FC = () => {
 
   return (
     <div className="user-workspace">
-      {/* Background layers */}
       <img className="fullscreen-bg-video" src="/forest.png" alt="" />
       <div className="volumetric-overlay" />
       <div className="fog-layer" />
@@ -81,7 +70,6 @@ export const UserLayout: React.FC = () => {
       <div className="dark-vignette" />
       <ForestParticles />
 
-      {/* ════ Left — Expandable Pill Sidebar ════ */}
       <nav className="glass-card floating-sidebar fade-in-left">
         <div className="sidebar-top">
           <div className="brand-logo" onClick={() => navigate('/app')}>
@@ -111,75 +99,46 @@ export const UserLayout: React.FC = () => {
         </div>
       </nav>
 
-      {/* ════ Center ════ */}
       <main className="main-content">
         <Outlet />
       </main>
 
-      {/* ════ Right — User-Facing Panel ════ */}
       <aside className="right-panel fade-in-up">
-        {/* Recent — Linear style */}
         <div className="panel-section">
           <div className="panel-title">Recent</div>
-          {fakeRecents.map(r => (
+          {recents.length > 0 ? recents.map((r: any) => (
             <div key={r.id} className="recent-item" onClick={() => navigate('/app')}>
               <div className="recent-main">
-                <span className="recent-src">{r.src}</span>
+                <span className="recent-src">{r.transcription?.slice(0, 20) || '...'}</span>
                 <SwapOutlined style={{ fontSize: 9, color: 'var(--ink-tertiary)', flexShrink: 0 }} />
-                <span className="recent-tgt">{r.tgt}</span>
+                <span className="recent-tgt">{r.translation?.slice(0, 20) || '...'}</span>
               </div>
-              <div className="recent-time">{r.time}</div>
+              <div className="recent-time">{r.createdAt?.slice(11, 16) || ''}</div>
               <span className="recent-arrow"><RightOutlined /></span>
             </div>
-          ))}
+          )) : (
+            <div style={{ fontSize: 12, color: 'var(--ink-tertiary)', padding: 8 }}>No translations yet</div>
+          )}
         </div>
 
-        {/* Current Session — unified card */}
         <div className="panel-section">
           <div className="panel-title">Current Session</div>
           <div className="session-card">
             <div className="session-stat">
               <div className="session-stat-icon"><TranslationOutlined /></div>
-              <div className="session-stat-body">
-                <div className="session-stat-label">Language Pair</div>
-                <div className="session-stat-value">CN ↔ EN</div>
-              </div>
+              <div className="session-stat-body"><div className="session-stat-label">Language Pair</div><div className="session-stat-value">CN ↔ EN</div></div>
             </div>
             <div className="session-stat">
               <div className="session-stat-icon"><ClockCircleOutlined /></div>
-              <div className="session-stat-body">
-                <div className="session-stat-label">Duration</div>
-                <div className="session-stat-value">12m 34s</div>
-              </div>
+              <div className="session-stat-body"><div className="session-stat-label">Duration</div><div className="session-stat-value">--</div></div>
             </div>
             <div className="session-stat">
               <div className="session-stat-icon"><CheckCircleOutlined /></div>
-              <div className="session-stat-body">
-                <div className="session-stat-label">Accuracy</div>
-                <div className="session-stat-value">98.2%</div>
-              </div>
+              <div className="session-stat-body"><div className="session-stat-label">Accuracy</div><div className="session-stat-value">--</div></div>
             </div>
           </div>
         </div>
 
-        {/* Recent Files */}
-        <div className="panel-section">
-          <div className="panel-title">Recent Files</div>
-          {recentFiles.map(f => (
-            <div key={f.name} className="recent-item" style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <FileOutlined style={{ fontSize: 14, color: 'var(--ink-tertiary)' }} />
-                <div>
-                  <div style={{ fontSize: 12.5, color: 'var(--ink-primary)', fontWeight: 500 }}>{f.name}</div>
-                  <div style={{ fontSize: 10.5, color: 'var(--ink-tertiary)', marginTop: 1 }}>{f.size} · {f.time}</div>
-                </div>
-              </div>
-              <span className="recent-arrow"><RightOutlined /></span>
-            </div>
-          ))}
-        </div>
-
-        {/* Shortcuts */}
         <div className="panel-section panel-shortcuts">
           <div className="panel-title shortcuts-header" onClick={() => setShortcutsOpen(!shortcutsOpen)}>
             <span>Shortcuts</span>

@@ -15,7 +15,7 @@ export const DragUpload: React.FC<DragUploadProps> = ({ onFileSelect, disabled }
     setOver(false);
     if (disabled) return;
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('audio/')) onFileSelect(file);
+    if (file) onFileSelect(file);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,10 +33,10 @@ export const DragUpload: React.FC<DragUploadProps> = ({ onFileSelect, disabled }
       onDrop={handleDrop}
       onClick={() => !disabled && inputRef.current?.click()}
     >
-      <input ref={inputRef} type="file" accept="audio/*" style={{ display: 'none' }} onChange={handleChange} />
+      <input ref={inputRef} type="file" accept=".wav,.mp3,.flac,.m4a,.ogg,.webm,audio/*" style={{ display: 'none' }} onChange={handleChange} />
       <div className="drag-zone-icon"><CloudUploadOutlined /></div>
-      <div className="drag-zone-title">{over ? '释放以上传' : '拖拽音频文件到这里'}</div>
-      <div className="drag-zone-hint">支持 WAV · MP3 · FLAC · M4A · OGG</div>
+      <div className="drag-zone-title">{over ? 'Release to upload' : 'Drop audio file or click to browse'}</div>
+      <div className="drag-zone-hint">WAV · MP3 · FLAC · M4A · OGG · WebM</div>
     </div>
   );
 };

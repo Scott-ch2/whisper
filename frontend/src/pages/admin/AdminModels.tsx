@@ -1,46 +1,51 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ThunderboltOutlined } from '@ant-design/icons';
+import { fetchModels, updateModel } from '../../services/api';
 
-const MODELS = [
-  { name: 'GPT-4 Turbo',  latency: '24ms', cost: '$0.018/min', enabled: true },
-  { name: 'Whisper v3',   latency: '18ms', cost: '$0.006/min', enabled: true },
-  { name: 'Claude Opus',  latency: '32ms', cost: '$0.025/min', enabled: true },
-  { name: 'Gemini Pro',   latency: '28ms', cost: '$0.015/min', enabled: false },
-  { name: 'DeepSeek V3',  latency: '22ms', cost: '$0.009/min', enabled: false },
-];
+export const AdminModels: React.FC = () => {
+  const [models, setModels] = useState<any[]>([]);
 
-export const AdminModels: React.FC = () => (
-  <div>
-    <div className="admin-page-header">
-      <h1 className="admin-page-title">AI Models</h1>
-      <p className="admin-page-sub">Model management & configuration</p>
-    </div>
+  useEffect(() => {
+    fetchModels().then(setModels).catch(() => {});
+  }, []);
 
-    <div className="model-grid">
-      {MODELS.map(m => (
-        <div key={m.name} className="model-card">
-          <div className="model-card-header">
-            <div className="model-card-name">{m.name}</div>
-            <span className={`model-badge ${m.enabled ? 'on' : 'off'}`}>
-              {m.enabled ? 'Running' : 'Stopped'}
-            </span>
-          </div>
-          <div className="model-stats">
-            <div className="model-stat">
-              <div className="model-stat-label">Latency</div>
-              <div className="model-stat-value">{m.latency}</div>
+  const toggle = async (id: number, current: number) => {
+    await updateModel(id, { isEnabled: current === 1 ? 0 : 1 });
+    fetchModels().then(setModels).catch(() => {});
+  };
+
+  return (
+    <div>
+      <div className="admin-page-header">
+        <h1 className="admin-page-title">AI Models</h1>
+        <p className="admin-page-sub">Model management & configuration</p>
+      </div>
+      <div className="model-grid">
+        {models.map((m: any) => (
+          <div key={m.id} className="model-card">
+            <div className="model-card-header">
+              <div className="model-card-name">{m.modelName}</div>
+              <span className={`model-badge ${m.isEnabled ? 'on' : 'off'}`}>
+                {m.isEnabled ? 'Running' : 'Stopped'}
+              </span>
             </div>
-            <div className="model-stat">
-              <div className="model-stat-label">Cost</div>
-              <div className="model-stat-value">{m.cost}</div>
+            <div className="model-stats">
+              <div className="model-stat">
+                <div className="model-stat-label">Type</div>
+                <div className="model-stat-value">{m.modelType}</div>
+              </div>
+              <div className="model-stat">
+                <div className="model-stat-label">Config</div>
+                <div className="model-stat-value" style={{ fontSize: 11 }}>{m.configJson?.slice(0, 30) || '—'}</div>
+              </div>
             </div>
+            <button className="model-toggle" onClick={() => toggle(m.id, m.isEnabled)}>
+              <ThunderboltOutlined style={{ marginRight: 6 }} />
+              {m.isEnabled ? 'Disable' : 'Enable'}
+            </button>
           </div>
-          <button className="model-toggle">
-            <ThunderboltOutlined style={{ marginRight: 6 }} />
-            {m.enabled ? 'Disable' : 'Enable'}
-          </button>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};

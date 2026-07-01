@@ -6,6 +6,7 @@ import com.speechtrans.entity.TranslationSegment;
 import com.speechtrans.mapper.TranslationTaskMapper;
 import com.speechtrans.mapper.TranslationSegmentMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.speechtrans.service.InferenceClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,7 @@ public class TranslationControllerV2 {
 
     private final TranslationTaskMapper taskMapper;
     private final TranslationSegmentMapper segmentMapper;
+    private final InferenceClient inferenceClient;
     private final SimpMessagingTemplate messagingTemplate;
 
     private static final String UPLOAD_DIR = "./uploads/audio/";
@@ -65,13 +67,17 @@ public class TranslationControllerV2 {
         task.setStatus("pending");
         taskMapper.insert(task);
 
-        // 3. 推送状态到 WebSocket
-        Map<String, Object> wsMsg = new LinkedHashMap<>();
-        wsMsg.put("type", "TASK_CREATED");
-        wsMsg.put("taskId", task.getId());
-        wsMsg.put("status", "pending");
-        wsMsg.put("timestamp", LocalDateTime.now().toString());
-        messagingTemplate.convertAndSend("/topic/tasks", wsMsg);
+        // 3. 推送状态到 WebSocket (non-critical, catch errors silently)
+        try {
+            Map<String, Object> wsMsg = new LinkedHashMap<>();
+            wsMsg.put("type", "TASK_CREATED");
+            wsMsg.put("taskId", task.getId());
+            wsMsg.put("status", "pending");
+            wsMsg.put("timestamp", LocalDateTime.now().toString());
+            messagingTemplate.convertAndSend("/topic/tasks", wsMsg);
+        } catch (Exception ignored) {
+            // WebSocket is optional for translation to work
+        }
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("taskId", task.getId());
@@ -145,24 +151,53 @@ public class TranslationControllerV2 {
         taskMapper.updateById(task);
         pushStatus(id, "PROCESSING_ASR", 0.0);
 
-        // 延迟模拟 → 实际应调用 Python 推理服务
+        // 调用 Python 推理服务进行真实 ASR+NMT
         new Thread(() -> {
             try {
-                Thread.sleep(2000);
+                // 读取音频文件字节
+                byte[] audioBytes = java.nio.file.Files.readAllBytes(java.nio.file.Path.of(task.getAudioFilePath()));
+
+                // 调用推理服务
+                Map<String, Object> result = inferenceClient.translate(
+                        audioBytes,
+                        task.getAudioFileName(),
+                        task.getSrcLang(),
+                        task.getTgtLang()
+                );
+
+                // 更新任务
                 task.setStatus("completed");
-                task.setDetectedLang("en");
-                task.setTranscription("Hello everyone, welcome to the AI real-time translation demo.");
-                task.setTranslation("大家好，欢迎体验 AI 实时翻译演示。");
-                task.setAudioDuration(4.8f);
+                task.setDetectedLang((String) result.get("detectedLanguage"));
+                task.setTranscription((String) result.get("transcription"));
+                task.setTranslation((String) result.get("translation"));
+                Object dur = result.get("duration");
+                task.setAudioDuration(dur != null ? ((Number) dur).floatValue() : 0f);
                 taskMapper.updateById(task);
 
                 // 写入分段数据
-                insertMockSegments(id);
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> segs = (List<Map<String, Object>>) result.get("segments");
+                if (segs != null) {
+                    for (int i = 0; i < segs.size(); i++) {
+                        Map<String, Object> segData = segs.get(i);
+                        TranslationSegment seg = new TranslationSegment();
+                        seg.setTaskId(id);
+                        seg.setSeq(i);
+                        Object startVal = segData.get("start");
+                        seg.setStartTime(startVal != null ? ((Number) startVal).floatValue() : 0f);
+                        Object endVal = segData.get("end");
+                        seg.setEndTime(endVal != null ? ((Number) endVal).floatValue() : 0f);
+                        seg.setSourceText((String) segData.get("sourceText"));
+                        seg.setTargetText((String) segData.get("targetText"));
+                        seg.setConfidence(0.95f);
+                        segmentMapper.insert(seg);
+                    }
+                }
 
                 pushStatus(id, "COMPLETED", 1.0);
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
                 task.setStatus("failed");
-                task.setErrorMessage("处理被中断: " + e.getMessage());
+                task.setErrorMessage("推理服务错误: " + e.getMessage());
                 taskMapper.updateById(task);
                 pushStatus(id, "FAILED", 0.0);
             }

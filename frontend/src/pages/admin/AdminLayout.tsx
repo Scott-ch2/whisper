@@ -7,6 +7,7 @@ import {
   HistoryOutlined, RobotOutlined, BarChartOutlined,
   ControlOutlined,
 } from '@ant-design/icons';
+import { clearToken } from '../../services/api';
 import './AdminLayout.css';
 
 const adminNav = [
@@ -27,7 +28,7 @@ export const AdminLayout: React.FC = () => {
   const userMenuItems = useMemo(() => [
     { key: 'profile', icon: <UserOutlined />, label: 'Profile' },
     { type: 'divider' as const },
-    { key: 'logout', danger: true, icon: <LogoutOutlined />, label: 'Sign Out', onClick: () => navigate('/login') },
+    { key: 'logout', danger: true, icon: <LogoutOutlined />, label: 'Sign Out', onClick: () => { clearToken(); navigate('/login'); } },
   ], [navigate]);
 
   return (

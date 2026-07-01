@@ -207,6 +207,9 @@
   TRANSLATION MONITOR
   ══════════════════════════════════════════════════════════════════════════════*/
 
+/*══════════════════════════════════════════════════════════════════════════════
+  AdminMonitor — Real-time Translation Monitor
+  ══════════════════════════════════════════════════════════════════════════════*/
 .monitor-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
 .monitor-request {
   padding: 16px; border-radius: 14px;

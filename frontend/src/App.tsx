@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import { AuthPage } from './pages/auth';
-import { UserLayout, TranslationPage } from './pages/user';
+import { UserLayout, TranslationPage, HistoryPage } from './pages/user';
 import { AdminLayout, AdminDashboard, AdminUsers, AdminMonitor, AdminHistory, AdminModels, AdminAnalytics, AdminSettings } from './pages/admin';
 import './styles/global.css';
 
@@ -32,6 +32,7 @@ const App: React.FC = () => {
           } />
           <Route path="/app" element={<UserLayout />}>
             <Route index element={<TranslationPage />} />
+            <Route path="history" element={<HistoryPage />} />
           </Route>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
