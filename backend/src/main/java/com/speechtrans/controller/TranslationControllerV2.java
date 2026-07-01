@@ -31,7 +31,8 @@ public class TranslationControllerV2 {
     private final SimpMessagingTemplate messagingTemplate;
 
 
-   private static final String UPLOAD_DIR = "C:/Users/Lenovo/Desktop/whisper/data/uploads/audio/";
+   // 使用 user.dir 获取当前后端项目(backend)的根目录，然后向上一级(../)保存到 data 文件夹中
+    private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/../data/uploads/audio/";
     /**
      * 上传音频并创建翻译任务
      *
