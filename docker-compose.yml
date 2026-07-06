@@ -1,0 +1,63 @@
+name: whisper
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: whisper-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: whisper123
+      MYSQL_DATABASE: speech_translate
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./data/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pwhisper123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - whisper-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: whisper-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/speech_translate?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: whisper123
+    volumes:
+      - upload_data:/app/uploads
+    ports:
+      - "8088:8088"
+    networks:
+      - whisper-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: whisper-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - whisper-net
+
+volumes:
+  mysql_data:
+  upload_data:
+
+networks:
+  whisper-net:
+    driver: bridge
