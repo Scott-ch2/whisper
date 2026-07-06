@@ -33,12 +33,12 @@ jwt:
 server:
   port: 8088
 
-# 文件上传目录配置（相对路径，相对于 user.dir/backend）
+# 文件上传目录配置（在 Docker 中 user.dir=/app）
 app:
   upload:
     dir: ./uploads/
   audio:
-    upload-dir: ../data/uploads/audio/
+    upload-dir: data/uploads/audio/
 
 # Knife4j
 springdoc:

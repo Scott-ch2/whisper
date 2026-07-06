@@ -31,7 +31,7 @@ public class TranslationControllerV2 {
     private final InferenceClient inferenceClient;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @Value("${app.audio.upload-dir:../data/uploads/audio/}")
+    @Value("${app.audio.upload-dir:data/uploads/audio/}")
     private String uploadDirPath;
 
     /**
@@ -49,8 +49,16 @@ public class TranslationControllerV2 {
             @RequestParam(value = "srcLang", defaultValue = "auto") String srcLang,
             @RequestParam("tgtLang") String tgtLang) throws IOException {
 
-        // 1. 保存音频文件（使用相对路径，相对于 user.dir）
-        Path uploadDir = Paths.get(uploadDirPath);
+        // 1. 保存音频文件（绝对路径，基于 user.dir）
+        //    在 Docker 中 user.dir=/app，最终路径 /app/data/uploads/audio/
+        //    在 IDE 中 user.dir=项目根目录/backend，确保目录存在
+        String baseDir = System.getProperty("user.dir");
+        Path basePath = Paths.get(baseDir);
+        // 如果 user.dir 以 backend 结尾，取父目录作为基准
+        if (basePath.endsWith("backend")) {
+            basePath = basePath.getParent();
+        }
+        Path uploadDir = basePath.resolve(uploadDirPath).normalize();
         if (!Files.exists(uploadDir)) {
             Files.createDirectories(uploadDir);
         }

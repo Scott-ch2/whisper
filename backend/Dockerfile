@@ -12,7 +12,7 @@ FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 COPY --from=builder /build/target/*.jar app.jar
-RUN mkdir -p /app/uploads /app/audio
+RUN mkdir -p /app/data/uploads/audio /app/uploads /app/audio
 
 EXPOSE 8088
 
